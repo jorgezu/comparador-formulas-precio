@@ -1,0 +1,30 @@
+{
+  "schema_version": "formula_price_comparator_config_v1",
+  "product_version": "FORMULA_WEB_PUBLIC_BETA_V1",
+  "title": "Comparador de fórmulas de valoración del precio",
+  "feedback_url": "",
+  "author": {
+    "name": "Jorge Cejudo Podio",
+    "linkedin_url": "",
+    "website_url": ""
+  },
+  "max_offers": 20,
+  "max_tender_price": 1000000000000.0,
+  "max_pmax": 10000.0,
+  "demo": {
+    "tender_price": 1000000.0,
+    "pmax": 40.0,
+    "offers": [
+      {"offer_id": "offer-a", "name": "A", "price": 970000.0},
+      {"offer_id": "offer-b", "name": "B", "price": 940000.0},
+      {"offer_id": "offer-c", "name": "C", "price": 910000.0},
+      {"offer_id": "offer-d", "name": "D", "price": 880000.0}
+    ]
+  },
+  "default_methods": [
+    "INVERSE_PRICE_PROPORTIONAL",
+    "LINEAR_DISCOUNT_MAX",
+    "NORMALIZED_PRICE_GAP_POWER",
+    "EXPONENTIAL_SATURATING_DISCOUNT"
+  ]
+}

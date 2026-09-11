@@ -1,0 +1,29 @@
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app/src \
+    PORT=8000
+
+WORKDIR /app
+
+COPY requirements-public.txt /app/requirements-public.txt
+RUN pip install --no-cache-dir -r /app/requirements-public.txt \
+    && groupadd --gid 10001 formula \
+    && useradd --uid 10001 --gid formula --no-create-home formula
+
+COPY src/cepos/__init__.py /app/src/cepos/__init__.py
+COPY src/cepos/formula_simulation/__init__.py /app/src/cepos/formula_simulation/__init__.py
+COPY src/cepos/formula_simulation/models.py /app/src/cepos/formula_simulation/models.py
+COPY src/cepos/formula_simulation/engine.py /app/src/cepos/formula_simulation/engine.py
+COPY src/cepos/formula_simulation/comparison.py /app/src/cepos/formula_simulation/comparison.py
+COPY src/cepos/formula_web /app/src/cepos/formula_web
+COPY src/cepos/web/templates/formula_comparator.html /app/src/cepos/web/templates/formula_comparator.html
+COPY src/cepos/web/static/formula-comparator.css /app/src/cepos/web/static/formula-comparator.css
+COPY src/cepos/web/static/formula-comparator.js /app/src/cepos/web/static/formula-comparator.js
+COPY config/public_tools/formula_price_comparator_v1.json /app/config/public_tools/formula_price_comparator_v1.json
+
+USER formula
+EXPOSE 8000
+
+CMD ["python", "-m", "cepos.formula_web.server"]

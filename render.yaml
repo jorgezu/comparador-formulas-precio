@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: comparador-formulas-precio
+    runtime: docker
+    region: frankfurt
+    plan: free
+    dockerfilePath: ./Dockerfile.public
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: FORMULA_PUBLIC_ALLOWED_HOSTS
+        value: "*.onrender.com,localhost,127.0.0.1"

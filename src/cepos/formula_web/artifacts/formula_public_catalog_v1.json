@@ -1,0 +1,91 @@
+{
+  "schema_version": "formula_public_catalog_v1",
+  "product_version": "FORMULA_WEB_PUBLIC_BETA_V1",
+  "engine_version": "FORMULA_METHOD_SIMULATION_V1",
+  "source_artifact_sha256": "6089c2390836f4efcad5eeac546a75d90f5c99b15f06aa0a0607394c8d2542f9",
+  "methods": [
+    {
+      "method_id": "INVERSE_PRICE_PROPORTIONAL",
+      "method_signature": "bb795a71253a05db7ec96f6cab59293c0b0d640590dd554e7715449d433e45e3",
+      "display_name": "Proporcional inversa respecto del precio ofertado",
+      "expression": "P = Pmax * Omin / Oi",
+      "parameters": {},
+      "set_dependencies": ["OMIN"],
+      "curvature": "CONVEX_IN_DISCOUNT",
+      "variants": [{"parameters": {}}]
+    },
+    {
+      "method_id": "LINEAR_DISCOUNT_MAX",
+      "method_signature": "3b95d64d5b733ab5384bacaadbe37b6e752925331efb45ea455facf600cc4266",
+      "display_name": "Lineal respecto de la baja máxima",
+      "expression": "P = Pmax * Bi / Bmax",
+      "parameters": {},
+      "set_dependencies": ["BMAX"],
+      "curvature": "LINEAR",
+      "variants": [{"parameters": {}}]
+    },
+    {
+      "method_id": "AFFINE_MIN_REFERENCE_OVER_TENDER_PRICE",
+      "method_signature": "ae4685d57e92b8644af5a34d7752d6ec3a4db4089fc57390e6989346f5076e45",
+      "display_name": "Lineal afín respecto de la oferta mínima",
+      "expression": "P = Pmax * (1 - (Oi - Omin) / PL)",
+      "parameters": {},
+      "set_dependencies": ["OMIN"],
+      "curvature": "LINEAR",
+      "variants": [{"parameters": {}}]
+    },
+    {
+      "method_id": "NORMALIZED_PRICE_GAP_POWER",
+      "method_signature": "5ae5a586ed597944c919ca7c3d2ce67d453e3e193a6b4855147ccd12bd69ebce",
+      "display_name": "Potencial sobre la brecha normalizada de precios",
+      "expression": "P = Pmax * (1 - ((Oi - Omin) / (PL - Omin))^n)",
+      "parameters": {"n": 5.0},
+      "set_dependencies": ["OMIN"],
+      "curvature": "PARAMETRIC_CONCAVE_FOR_N_GT_1",
+      "variants": [
+        {"parameters": {"n": 6.0}},
+        {"parameters": {"n": 5.0}},
+        {"parameters": {"n": 10.0}},
+        {"parameters": {"n": 3.0}},
+        {"parameters": {"n": 1.0}}
+      ]
+    },
+    {
+      "method_id": "DISCOUNT_MAX_POWER",
+      "method_signature": "94774115cc3ccac50889374b3925ea0498ffd3bd0040e76af5a08621dbe5c390",
+      "display_name": "Potencial respecto de la baja máxima",
+      "expression": "P = Pmax * (Bi / Bmax)^n",
+      "parameters": {"n": 0.16666666666666666},
+      "set_dependencies": ["BMAX"],
+      "curvature": "PARAMETRIC_POWER",
+      "variants": [{"parameters": {"n": 0.16666666666666666}}]
+    },
+    {
+      "method_id": "EXPONENTIAL_SATURATING_DISCOUNT",
+      "method_signature": "770ac68bc82248d46a759ec9b298fe22f9831af60afcc0f2a089e028866b71d2",
+      "display_name": "Exponencial saturante respecto de la baja",
+      "expression": "P = Pmax * (1 - exp(-k * 100 * Bi))",
+      "parameters": {"k": 0.3},
+      "set_dependencies": [],
+      "curvature": "CONCAVE_SATURATING",
+      "variants": [
+        {"parameters": {"k": 0.25}},
+        {"parameters": {"k": 0.3}}
+      ]
+    },
+    {
+      "method_id": "DISCOUNT_THRESHOLD_TWO_SEGMENTS",
+      "method_signature": "60800cc0af7c2add13168a464dae065b44a68ec44db6a3494de16ba8c8c8083f",
+      "display_name": "Lineal por tramos con umbral de baja",
+      "expression": "P = piecewise(m1*Bi, m1*Bt + m2*(Bi-Bt)/(Bmax-Bt))",
+      "parameters": {"first_slope": 2.0, "threshold": 0.1, "tail_points": 5.0},
+      "set_dependencies": ["BMAX"],
+      "curvature": "PIECEWISE_LINEAR",
+      "variants": [
+        {"parameters": {"first_slope": 3.0, "threshold": 0.1, "tail_points": 5.0}},
+        {"parameters": {"first_slope": 4.5, "threshold": 0.08, "tail_points": 3.0}},
+        {"parameters": {"first_slope": 2.0, "threshold": 0.1, "tail_points": 5.0}}
+      ]
+    }
+  ]
+}

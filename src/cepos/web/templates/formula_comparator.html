@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="description" content="Calcula y compara cómo distintas fórmulas de valoración del precio puntúan un mismo escenario de licitación.">
+  <title>{{ catalog.title }}</title>
+  <link rel="stylesheet" href="{{ stylesheet_url }}">
+  <script id="formula-catalog" type="application/json">{{ catalog | tojson }}</script>
+  <script defer src="{{ script_url }}"></script>
+</head>
+<body class="fp-body">
+  <header class="fp-topbar">
+    <a class="fp-product" href="{{ catalog.home_url }}" aria-label="Reiniciar comparador">
+      <span class="fp-product-mark" aria-hidden="true">f(x)</span>
+      <span>
+        <strong>Comparador de fórmulas</strong>
+        <small>Valoración del criterio precio</small>
+      </span>
+    </a>
+    <div class="fp-top-actions">
+      <button class="fp-button fp-button-quiet" id="load-demo" type="button">Cargar ejemplo</button>
+      {% if catalog.feedback_url %}<button class="fp-button fp-button-quiet" id="feedback-button" type="button">Enviar comentario</button>{% endif %}
+    </div>
+  </header>
+
+  <main class="fp-shell">
+    <section class="fp-heading" aria-labelledby="page-title">
+      <div>
+        <p class="fp-kicker">Análisis matemático de escenarios</p>
+        <h1 id="page-title">Comparador de fórmulas de valoración del precio</h1>
+      </div>
+      <div class="fp-intro">
+        <p>Introduce las ofertas y observa cómo cambia la separación de puntos según el método aplicado.</p>
+        <div class="fp-promises" aria-label="Qué permite hacer">
+          <span><strong>Calcula</strong> puntuaciones</span>
+          <span><strong>Compara</strong> métodos</span>
+          <span><strong>Entiende</strong> diferencias</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="fp-mode-switch" role="group" aria-label="Nivel de detalle">
+      <button type="button" class="is-active" data-mode="simple" aria-pressed="true">Simple</button>
+      <button type="button" data-mode="advanced" aria-pressed="false">Análisis avanzado</button>
+    </div>
+
+    <div class="fp-workspace" id="formula-workspace" data-mode="simple">
+      <aside class="fp-controls" aria-labelledby="scenario-title">
+        <div class="fp-panel-heading">
+          <span class="fp-step">01</span>
+          <div>
+            <h2 id="scenario-title">Escenario</h2>
+            <p>Parte del ejemplo o sustituye presupuesto, puntos y ofertas.</p>
+          </div>
+        </div>
+
+        <div class="fp-field-grid">
+          <label class="fp-field">
+            <span>Presupuesto de licitación</span>
+            <span class="fp-money-input">
+              <input id="tender-price" type="number" inputmode="decimal" min="0.01" step="1000" required>
+              <span>EUR</span>
+            </span>
+          </label>
+          <label class="fp-field">
+            <span>Puntuación máxima</span>
+            <span class="fp-money-input">
+              <input id="pmax" type="number" inputmode="decimal" min="0.01" step="1" required>
+              <span>pt</span>
+            </span>
+          </label>
+        </div>
+
+        <div class="fp-offers-heading">
+          <h3>Ofertas</h3>
+          <span id="offer-count"></span>
+        </div>
+        <div class="fp-offer-list" id="offer-list"></div>
+        <div class="fp-inline-actions">
+          <button class="fp-button fp-button-outline" id="add-offer" type="button"><span aria-hidden="true">+</span> Añadir oferta</button>
+          <button class="fp-button fp-button-link" id="add-extreme" type="button">Probar oferta extrema</button>
+        </div>
+
+        <div class="fp-section-rule"></div>
+        <div class="fp-panel-heading fp-method-heading">
+          <span class="fp-step">02</span>
+          <div>
+            <h2>Fórmulas</h2>
+            <p>Selecciona uno o varios métodos para compararlos.</p>
+          </div>
+        </div>
+        <fieldset class="fp-method-list" id="method-list">
+          <legend class="fp-visually-hidden">Métodos de valoración</legend>
+        </fieldset>
+
+        <button class="fp-button fp-button-primary" id="compare-button" type="button">Comparar resultados</button>
+        <p class="fp-control-note">Los resultados se actualizan al modificar el escenario.</p>
+      </aside>
+
+      <section class="fp-results" aria-labelledby="results-title">
+        <div class="fp-results-heading">
+          <div>
+            <span class="fp-step">03</span>
+            <h2 id="results-title">Resultado</h2>
+          </div>
+          <button class="fp-button fp-button-outline" id="download-csv" type="button" disabled>Descargar CSV</button>
+        </div>
+
+        <div class="fp-status" id="result-status" role="status" aria-live="polite">
+          Calculando el ejemplo...
+        </div>
+
+        <section aria-labelledby="range-title">
+          <div class="fp-section-heading">
+            <div>
+              <p class="fp-kicker">Peso nominal y separación real</p>
+              <h3 id="range-title">Rango efectivo del escenario</h3>
+            </div>
+            <details class="fp-help">
+              <summary>¿Qué significa?</summary>
+              <p>Es la distancia entre la puntuación más alta y la más baja. Describe la separación producida en este escenario; no significa que el criterio tenga jurídicamente ese peso.</p>
+            </details>
+          </div>
+          <div class="fp-range-grid" id="range-grid"></div>
+        </section>
+
+        <section class="fp-change-panel" id="change-panel" aria-labelledby="change-title">
+          <div>
+            <p class="fp-kicker">¿Qué pasa si...?</p>
+            <h3 id="change-title">Mide el efecto de una nueva oferta</h3>
+            <p id="change-summary">Modifica un precio o añade una oferta para ver qué puntuaciones cambian.</p>
+            <details class="fp-help fp-change-help">
+              <summary>Omin, Bmax y puntuaciones que cambian</summary>
+              <p>Omin es la oferta mínima y Bmax la baja máxima. Las fórmulas que usan esas referencias pueden cambiar los puntos de ofertas cuyo precio sigue igual.</p>
+            </details>
+          </div>
+          <button class="fp-button fp-button-outline" id="set-baseline" type="button">Fijar situación actual</button>
+          <div class="fp-impact-list" id="impact-list"></div>
+        </section>
+
+        <section class="fp-table-section" aria-labelledby="table-title">
+          <div class="fp-section-heading">
+            <div>
+              <p class="fp-kicker">Puntuación por oferta</p>
+              <h3 id="table-title">Comparación numérica</h3>
+            </div>
+            <span class="fp-table-note" id="table-note"></span>
+          </div>
+          <div class="fp-table-scroll">
+            <table class="fp-results-table">
+              <thead id="results-head"></thead>
+              <tbody id="results-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="fp-chart-section" aria-labelledby="chart-title">
+          <div class="fp-section-heading">
+            <div>
+              <p class="fp-kicker">Visualización</p>
+              <h3 id="chart-title">Cómo se distribuyen los puntos</h3>
+            </div>
+          </div>
+          <div class="fp-chart-tabs" role="tablist" aria-label="Tipo de gráfico">
+            <button type="button" role="tab" aria-selected="true" data-chart="offers">Por oferta</button>
+            <button type="button" role="tab" aria-selected="false" data-chart="price">Precio y puntos</button>
+            <button type="button" role="tab" aria-selected="false" data-chart="discount">Baja normalizada</button>
+            <button type="button" role="tab" aria-selected="false" data-chart="variants">Variantes</button>
+          </div>
+          <div class="fp-variant-picker" id="variant-picker" hidden>
+            <label for="variant-family">Familia mostrada</label>
+            <select id="variant-family"></select>
+          </div>
+          <div class="fp-chart-wrap" id="chart-wrap">
+            <svg id="result-chart" viewBox="0 0 920 430" role="img" aria-labelledby="chart-svg-title chart-svg-desc">
+              <title id="chart-svg-title">Comparación de puntuaciones</title>
+              <desc id="chart-svg-desc">Gráfico generado a partir de los resultados calculados por el motor de CePOS.</desc>
+            </svg>
+          </div>
+          <div class="fp-chart-legend" id="chart-legend"></div>
+        </section>
+
+        <section class="fp-advanced-panel" id="advanced-panel" aria-labelledby="advanced-title">
+          <div class="fp-section-heading">
+            <div>
+              <p class="fp-kicker">Lectura avanzada</p>
+              <h3 id="advanced-title">Sensibilidad y dependencia</h3>
+            </div>
+          </div>
+          <div class="fp-advanced-grid" id="advanced-grid"></div>
+        </section>
+
+        <section class="fp-formulas" aria-labelledby="formulas-title">
+          <div class="fp-section-heading">
+            <div>
+              <p class="fp-kicker">Explicación humana</p>
+              <h3 id="formulas-title">Qué hace cada fórmula</h3>
+            </div>
+          </div>
+          <div id="formula-explanations"></div>
+        </section>
+      </section>
+    </div>
+
+    <section class="fp-about" aria-labelledby="about-title">
+      <div>
+        <p class="fp-kicker">Qué hace esta herramienta</p>
+        <h2 id="about-title">40 puntos nominales no siempre separan 40 puntos</h2>
+      </div>
+      <p>Calcula un mismo escenario con distintas familias de fórmulas, compara las puntuaciones y muestra cuánto separa realmente cada método a las ofertas. También permite observar si una nueva oferta altera la puntuación de las demás aunque sus precios no cambien.</p>
+    </section>
+  </main>
+
+  <footer class="fp-footer">
+    <div>
+      <p>La herramienta permite analizar el comportamiento matemático de distintas fórmulas de valoración. No sustituye el análisis jurídico ni determina por sí misma la idoneidad de una fórmula para un expediente concreto.</p>
+      <p class="fp-privacy">Los datos introducidos se procesan únicamente en esta aplicación y no se envían a terceros. No se utilizan rastreadores.</p>
+    </div>
+    <div class="fp-credit">
+      <span>Desarrollado por {{ catalog.author.name }}</span>
+      <nav aria-label="Enlaces del autor">
+        {% if catalog.author.linkedin_url %}<a href="{{ catalog.author.linkedin_url }}" rel="noopener noreferrer">LinkedIn</a>{% endif %}
+        {% if catalog.author.website_url %}<a href="{{ catalog.author.website_url }}" rel="noopener noreferrer">Web</a>{% endif %}
+      </nav>
+      <small>{{ catalog.product_version }}</small>
+    </div>
+  </footer>
+</body>
+</html>
