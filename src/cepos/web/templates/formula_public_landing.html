@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="description" content="Comprende cómo la fórmula económica modifica el resultado de una licitación pública.">
+  <title>{{ catalog.title }}</title>
+  <link rel="stylesheet" href="{{ stylesheet_url }}">
+</head>
+<body class="fp-body fp-landing-page">
+  <header class="fp-topbar">
+    <a class="fp-product" href="{{ home_url }}" aria-label="Inicio del proyecto Fórmulas de Valoración">
+      <span class="fp-product-mark" aria-hidden="true">f(x)</span>
+      <span><strong>Fórmulas de Valoración</strong><small>Licitación pública</small></span>
+    </a>
+    <nav class="fp-nav" aria-label="Navegación principal">
+      <a href="{{ analyzer_url }}?perfil=administracion">Analizador</a>
+      <a href="{{ lab_url }}">Laboratorio</a>
+    </nav>
+  </header>
+
+  <main class="fp-shell">
+    <section class="fp-heading fp-landing" aria-labelledby="page-title">
+      <div class="fp-landing-copy">
+        <p class="fp-kicker">Proyecto Fórmulas de Valoración</p>
+        <h1 id="page-title">La importancia de la fórmula económica en la licitación pública</h1>
+        <p class="fp-landing-subtitle">Asignar 40 puntos al precio no asegura que realmente discriminen 40; la fórmula, las ofertas y las bajas extremas pueden cambiar radicalmente el resultado de una licitación.</p>
+        <a class="fp-context-link" href="{{ lab_url }}">¿Por qué ocurre esto? Entender las fórmulas de precio</a>
+      </div>
+      <figure class="fp-landing-figure">
+        <img src="{{ venn_image_url }}" width="720" height="720" alt="Diagrama de equilibrio entre calidad, fiabilidad y buen precio">
+      </figure>
+    </section>
+
+    <section class="fp-profile-gateway" aria-label="Elegir perfil de análisis">
+      <a class="fp-profile-card" href="{{ analyzer_url }}?perfil=administracion">
+        <span class="fp-profile-label">Administración pública</span>
+        <h2>¿Qué fórmula de precio ayuda a seleccionar mejor oferta?</h2>
+        <p>Compara fórmulas, curvas teóricas y casos reales para ver cómo se reparten los puntos y qué efecto producen las bajas extremas.</p>
+        <strong>Analizar y diseñar una fórmula <span aria-hidden="true">→</span></strong>
+      </a>
+      <a class="fp-profile-card" href="{{ analyzer_url }}?perfil=empresa">
+        <span class="fp-profile-label">Empresa licitadora</span>
+        <h2>¿Tiene sentido presentarte con la baja que realmente puedes asumir?</h2>
+        <p>Simula ofertas a partir de tus costes y capacidades reales para entender dónde compites con una fórmula concreta.</p>
+        <strong>Simular mi oferta <span aria-hidden="true">→</span></strong>
+      </a>
+    </section>
+
+    <section class="fp-equations-band" aria-label="Ejemplos de fórmulas económicas">
+      <div>
+        <p class="fp-kicker">Base matemática</p>
+        <h2>De la ecuación al resultado real</h2>
+        <a class="fp-text-link" href="{{ lab_url }}">Abrir el laboratorio teórico</a>
+      </div>
+      <img src="{{ equations_image_url }}" width="2160" height="402" alt="Ejemplos provisionales de fórmulas económicas de valoración del precio">
+    </section>
+
+    <section class="fp-landing-explainer" aria-labelledby="about-title">
+      <p class="fp-kicker">Dos espacios conectados</p>
+      <h2 id="about-title">Fórmula, curva, ofertas, puntuación y adjudicación</h2>
+      <p>El laboratorio permite comprender el comportamiento teórico de cada ecuación. El analizador muestra qué ocurre al aplicarla a licitaciones reales anonimizadas y permite ensayar cambios sin alterar los datos originales.</p>
+      <div class="fp-landing-actions">
+        <a class="fp-button fp-button-primary" href="{{ analyzer_url }}?perfil=administracion">Explorar casos reales</a>
+        <a class="fp-button fp-button-outline" href="{{ lab_url }}">Entender las fórmulas</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="fp-footer">
+    <p>Herramienta de análisis matemático. No sustituye el análisis jurídico de un expediente concreto.</p>
+    <p>Desarrollado por Jorge Cejudo Podio · {{ catalog.product_version }}</p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="description" content="Analizador de casos reales de fórmulas de valoración económica.">
+  <title>Analizador de casos reales · {{ catalog.title }}</title>
+  <link rel="stylesheet" href="{{ stylesheet_url }}">
+  <script id="formula-catalog" type="application/json">{{ catalog | tojson }}</script>
+  <script defer src="{{ format_script_url }}"></script>
+  <script defer src="{{ script_url }}"></script>
+</head>
+<body class="fp-body fp-analysis-page">
+  <header class="fp-topbar">
+    <a class="fp-product" href="{{ home_url }}" aria-label="Volver al inicio">
+      <span class="fp-product-mark" aria-hidden="true">f(x)</span>
+      <span><strong>Analizador de casos reales</strong><small>Fórmulas de Valoración</small></span>
+    </a>
+    <nav class="fp-nav" aria-label="Navegación principal">
+      <a aria-current="page" href="{{ analyzer_url }}">Analizador</a>
+      <a href="{{ lab_url }}">Laboratorio</a>
+    </nav>
+  </header>
+
+  <main class="fp-analysis-shell" id="formula-workspace">
+    <section class="fp-case-strip" aria-label="Datos principales del caso">
+      <div class="fp-case-selector-group">
+        <label for="case-selector">Caso real</label>
+        <select id="case-selector"></select>
+      </div>
+      <div class="fp-profile-control">
+        <span>Perfil</span>
+        <div class="fp-segmented" id="profile-selector" role="group" aria-label="Perfil de análisis">
+          <button type="button" data-profile="administracion" aria-pressed="true">Administración</button>
+          <button type="button" data-profile="empresa" aria-pressed="false">Empresa</button>
+        </div>
+      </div>
+      <div class="fp-case-strip-facts" id="case-strip-facts"></div>
+      <button class="fp-button fp-button-outline" id="restore-case" type="button">Restaurar caso real</button>
+    </section>
+
+    <p class="fp-case-note" id="case-note"></p>
+
+    <section class="fp-cockpit" aria-label="Puesto de análisis del caso">
+      <aside class="fp-control-column" aria-label="Controles de simulación">
+        <div class="fp-control-intro">
+          <p class="fp-kicker">Cambiar y observar</p>
+          <h1 id="case-title">Cargando caso…</h1>
+          <p id="scenario-guidance"></p>
+          <div class="fp-status" id="result-status" role="status" aria-live="polite">Calculando…</div>
+        </div>
+
+        <details class="fp-control-section" open>
+          <summary>Fórmulas visibles <span id="method-count"></span></summary>
+          <div class="fp-method-list" id="method-list"></div>
+        </details>
+
+        <details class="fp-control-section" open>
+          <summary>Parámetros</summary>
+          <div class="fp-parameter-list" id="parameter-list"></div>
+        </details>
+
+        <details class="fp-control-section">
+          <summary>Ofertas <span id="offer-count"></span></summary>
+          <div class="fp-field-grid fp-compact-fields">
+            <label class="fp-field"><span>Precio de licitación</span><input id="tender-price" type="number" inputmode="decimal" min="0.01" step="1000"></label>
+            <label class="fp-field"><span>Puntos precio</span><input id="pmax" type="number" inputmode="decimal" min="0.01" step="1"></label>
+          </div>
+          <div class="fp-offer-list" id="offer-list"></div>
+          <button class="fp-button fp-button-outline fp-full-button" id="add-offer" type="button">Añadir oferta</button>
+        </details>
+
+        <details class="fp-control-section">
+          <summary>¿Qué pasa si…?</summary>
+          <div class="fp-what-if-actions">
+            <button class="fp-button fp-button-outline" id="add-extreme" type="button">Añadir una baja extrema</button>
+            <button class="fp-button fp-button-quiet" id="restore-case-secondary" type="button">Deshacer simulación</button>
+          </div>
+          <p id="impact-summary" class="fp-small-copy"></p>
+        </details>
+      </aside>
+
+      <section class="fp-chart-column" aria-labelledby="chart-title">
+        <div class="fp-panel-heading">
+          <div>
+            <p class="fp-kicker">Curvas y ofertas reales</p>
+            <h2 id="chart-title">Puntos obtenidos según la baja</h2>
+          </div>
+          <a class="fp-text-link" id="understand-formula-link" href="{{ lab_url }}">Entender esta fórmula</a>
+        </div>
+        <div class="fp-chart-wrap">
+          <svg id="result-chart" viewBox="0 0 920 500" role="img" aria-labelledby="chart-svg-title chart-svg-desc">
+            <title id="chart-svg-title">Curvas de puntuación y ofertas del caso</title>
+            <desc id="chart-svg-desc">El eje horizontal representa la baja porcentual y el vertical los puntos del criterio precio.</desc>
+          </svg>
+        </div>
+        <div class="fp-chart-legend" id="chart-legend" aria-label="Fórmulas activas"></div>
+        <div class="fp-chart-offers" id="chart-offers" aria-label="Ofertas representadas"></div>
+        <div class="fp-selected-offer" id="selected-offer" aria-live="polite">Selecciona un punto LIC-n para fijar sus datos.</div>
+      </section>
+
+      <aside class="fp-result-column" aria-label="Resultados principales">
+        <div class="fp-result-heading">
+          <p class="fp-kicker">Resultado actual</p>
+          <label for="ranking-formula">Clasificar con</label>
+          <select id="ranking-formula"></select>
+        </div>
+        <div class="fp-winner-current"><span>Ganador simulado</span><strong id="simulated-winner">—</strong><small id="winner-formula-label"></small></div>
+        <div class="fp-baseline-compare" id="baseline-compare"></div>
+        <div class="fp-result-identities">
+          <div><span>Mejor técnicamente</span><strong id="technical-best">—</strong></div>
+          <div><span>Oferta más económica</span><strong id="cheapest-offer">—</strong></div>
+        </div>
+        <div class="fp-segmented fp-ranking-switch" role="group" aria-label="Tipo de clasificación">
+          <button type="button" class="is-active" data-ranking="price" aria-pressed="true">Sólo precio</button>
+          <button type="button" data-ranking="total" aria-pressed="false">Puntuación total</button>
+        </div>
+        <ol class="fp-ranking-list" id="ranking-list"></ol>
+        <div class="fp-score-spread" id="score-spread"></div>
+      </aside>
+    </section>
+
+    <section class="fp-data-section" aria-labelledby="data-title">
+      <div class="fp-section-heading"><div><p class="fp-kicker">Detalle verificable</p><h2 id="data-title">Datos del caso</h2></div></div>
+      <div class="fp-table-scroll"><table class="fp-results-table"><thead><tr><th>Oferta</th><th>Importe</th><th>Baja €</th><th>Baja %</th><th>Puntos NO precio</th><th>Estado</th></tr></thead><tbody id="case-data-body"></tbody></table></div>
+    </section>
+
+    <section class="fp-data-section" aria-labelledby="scores-title">
+      <div class="fp-section-heading"><div><p class="fp-kicker">Comparación</p><h2 id="scores-title">Puntuación por fórmula</h2></div><span class="fp-table-note" id="precision-note"></span></div>
+      <div class="fp-table-scroll"><table class="fp-results-table"><thead id="scores-head"></thead><tbody id="scores-body"></tbody></table></div>
+    </section>
+
+    <section class="fp-conclusions" aria-labelledby="conclusions-title">
+      <div><p class="fp-kicker">Lectura del resultado</p><h2 id="conclusions-title">Qué muestra este caso</h2></div>
+      <ul id="conclusion-list"></ul>
+    </section>
+
+    <section class="fp-commercial-cta">
+      <div><p class="fp-kicker">Análisis profesional</p><h2 id="commercial-cta-title">¿Quieres analizar tu propia licitación?</h2><p id="commercial-cta-copy"></p></div>
+      <a class="fp-button fp-button-primary" href="{{ home_url }}">Volver al proyecto</a>
+    </section>
+  </main>
+
+  <footer class="fp-footer"><p>Datos reales anonimizados. La fuente estructurada original no se publica.</p><p>{{ catalog.product_version }}</p></footer>
+</body>
+</html>

@@ -1,0 +1,168 @@
+{
+  "schema_version": "FORMULA_CANONICAL_CATALOG_V1",
+  "methods": [
+    {
+      "method_id": "INVERSE_PRICE_PROPORTIONAL",
+      "public_name": "Proporcional inversa",
+      "short_name": "Inversa",
+      "implementation_expression": "P = Pmax * Omin / Oi",
+      "equation_plain": "P_i = P_max · O_min / O_i",
+      "equation_mathml": "<math display=\"block\" aria-label=\"P sub i igual a P máximo por O mínimo dividido por O sub i\"><msub><mi>P</mi><mi>i</mi></msub><mo>=</mo><msub><mi>P</mi><mi>max</mi></msub><mo>·</mo><mfrac><msub><mi>O</mi><mi>min</mi></msub><msub><mi>O</mi><mi>i</mi></msub></mfrac></math>",
+      "reference_type": "Relativa",
+      "dependency": "Oferta mínima del conjunto (Omin)",
+      "parameters": [],
+      "description": "La oferta de menor precio obtiene la puntuación máxima y las demás se valoran de forma inversamente proporcional a su importe.",
+      "behavior": "Curva convexa respecto de la baja.",
+      "particularities": [
+        "La puntuación de todas las ofertas puede cambiar si aparece una nueva oferta mínima.",
+        "Una oferta sin baja puede obtener más de cero puntos cuando ya existe otra oferta con baja."
+      ],
+      "zero_discount_behavior": "Puede ser mayor que cero; depende de Omin.",
+      "verified_equivalences": [],
+      "source_alignment": ["motor", "workbook"],
+      "discrepancies": []
+    },
+    {
+      "method_id": "LINEAR_DISCOUNT_MAX",
+      "public_name": "Lineal",
+      "short_name": "Lineal",
+      "implementation_expression": "P = Pmax * Bi / Bmax",
+      "equation_plain": "P_i = P_max · B_i / B_max",
+      "equation_mathml": "<math display=\"block\" aria-label=\"P sub i igual a P máximo por B sub i dividido por B máximo\"><msub><mi>P</mi><mi>i</mi></msub><mo>=</mo><msub><mi>P</mi><mi>max</mi></msub><mo>·</mo><mfrac><msub><mi>B</mi><mi>i</mi></msub><msub><mi>B</mi><mi>max</mi></msub></mfrac></math>",
+      "reference_type": "Relativa",
+      "dependency": "Baja máxima del conjunto (Bmax)",
+      "parameters": [],
+      "description": "Reparte los puntos linealmente entre la baja cero y la mayor baja presentada.",
+      "behavior": "Recta creciente desde cero hasta Pmax.",
+      "particularities": [
+        "La pendiente cambia cuando cambia la baja máxima.",
+        "Una oferta de un tercero puede modificar los puntos del resto."
+      ],
+      "zero_discount_behavior": "Obtiene cero puntos.",
+      "verified_equivalences": [
+        "Coincide con Exponencial relativa cuando n = 1.",
+        "Coincide con Raíz k-ésima cuando n = 1 (k = 1)."
+      ],
+      "source_alignment": ["motor", "workbook", "presentacion"],
+      "discrepancies": []
+    },
+    {
+      "method_id": "AFFINE_MIN_REFERENCE_OVER_TENDER_PRICE",
+      "public_name": "Lineal referenciada a la oferta mínima",
+      "short_name": "Lineal Omin",
+      "implementation_expression": "P = Pmax * (1 - (Oi - Omin) / PL)",
+      "equation_plain": "P_i = P_max · [1 - (O_i - O_min) / PL]",
+      "equation_mathml": "<math display=\"block\" aria-label=\"P sub i igual a P máximo por uno menos O sub i menos O mínimo dividido por precio de licitación\"><msub><mi>P</mi><mi>i</mi></msub><mo>=</mo><msub><mi>P</mi><mi>max</mi></msub><mo>·</mo><mfenced><mn>1</mn><mo>−</mo><mfrac><mrow><msub><mi>O</mi><mi>i</mi></msub><mo>−</mo><msub><mi>O</mi><mi>min</mi></msub></mrow><mi>PL</mi></mfrac></mfenced></math>",
+      "reference_type": "Relativa",
+      "dependency": "Oferta mínima del conjunto (Omin)",
+      "parameters": [],
+      "description": "Descuenta puntos según la distancia a la oferta mínima usando el precio de licitación como escala.",
+      "behavior": "Recta cuya posición depende de Omin.",
+      "particularities": [
+        "La oferta mínima obtiene Pmax.",
+        "Una oferta sin baja puede obtener más de cero puntos."
+      ],
+      "zero_discount_behavior": "Puede ser mayor que cero; depende de Omin.",
+      "verified_equivalences": [],
+      "source_alignment": ["motor"],
+      "discrepancies": [
+        "No se ha localizado esta formulación en las láminas o columnas principales del workbook revisadas."
+      ]
+    },
+    {
+      "method_id": "NORMALIZED_PRICE_GAP_POWER",
+      "public_name": "Exponencial relativa",
+      "short_name": "Exp. relativa",
+      "implementation_expression": "P = Pmax * (1 - ((Oi - Omin) / (PL - Omin))^n)",
+      "equation_plain": "P_i = P_max · [1 - ((O_i - O_min) / (PL - O_min))^n]",
+      "equation_mathml": "<math display=\"block\" aria-label=\"P sub i igual a P máximo por uno menos la fracción O sub i menos O mínimo entre precio de licitación menos O mínimo elevada a n\"><msub><mi>P</mi><mi>i</mi></msub><mo>=</mo><msub><mi>P</mi><mi>max</mi></msub><mo>·</mo><mfenced><mn>1</mn><mo>−</mo><msup><mfenced><mfrac><mrow><msub><mi>O</mi><mi>i</mi></msub><mo>−</mo><msub><mi>O</mi><mi>min</mi></msub></mrow><mrow><mi>PL</mi><mo>−</mo><msub><mi>O</mi><mi>min</mi></msub></mrow></mfrac></mfenced><mi>n</mi></msup></mfenced></math>",
+      "reference_type": "Relativa",
+      "dependency": "Oferta mínima del conjunto (Omin)",
+      "parameters": ["n"],
+      "description": "El exponente n modifica la concavidad y la rapidez con la que se concentran los puntos cerca del máximo.",
+      "behavior": "Con n = 1 es lineal; con n > 1 concentra más puntuación en bajas moderadas.",
+      "particularities": [
+        "Toda la curva cambia cuando cambia Omin.",
+        "Permite comparar de forma directa el efecto del exponente n."
+      ],
+      "zero_discount_behavior": "Obtiene cero puntos.",
+      "verified_equivalences": [
+        "Con n = 1 coincide con la fórmula Lineal respecto de Bmax."
+      ],
+      "source_alignment": ["motor", "workbook", "presentacion"],
+      "discrepancies": [
+        "La documentación la denomina exponencial, aunque la implementación matemática es una potencia de exponente n."
+      ]
+    },
+    {
+      "method_id": "DISCOUNT_MAX_POWER",
+      "public_name": "Raíz k-ésima",
+      "short_name": "Raíz k",
+      "implementation_expression": "P = Pmax * (Bi / Bmax)^n",
+      "equation_plain": "P_i = P_max · (B_i / B_max)^n; en la variante raíz, n = 1/k",
+      "equation_mathml": "<math display=\"block\" aria-label=\"P sub i igual a P máximo por B sub i dividido por B máximo elevado a n; n igual a uno dividido por k\"><msub><mi>P</mi><mi>i</mi></msub><mo>=</mo><msub><mi>P</mi><mi>max</mi></msub><mo>·</mo><msup><mfenced><mfrac><msub><mi>B</mi><mi>i</mi></msub><msub><mi>B</mi><mi>max</mi></msub></mfrac></mfenced><mi>n</mi></msup><mspace width=\"1em\"/><mi>n</mi><mo>=</mo><mfrac><mn>1</mn><mi>k</mi></mfrac></math>",
+      "reference_type": "Relativa",
+      "dependency": "Baja máxima del conjunto (Bmax)",
+      "parameters": ["n"],
+      "description": "La variante documentada usa n = 1/6 y eleva rápidamente la puntuación desde bajas pequeñas.",
+      "behavior": "Con 0 < n < 1 es cóncava; con n = 1 es lineal.",
+      "particularities": [
+        "La variante raíz sexta usa n = 1/6.",
+        "Toda la escala cambia si cambia Bmax."
+      ],
+      "zero_discount_behavior": "Obtiene cero puntos.",
+      "verified_equivalences": [
+        "Con n = 1 (k = 1) coincide con la fórmula Lineal respecto de Bmax."
+      ],
+      "source_alignment": ["motor", "workbook", "presentacion"],
+      "discrepancies": []
+    },
+    {
+      "method_id": "EXPONENTIAL_SATURATING_DISCOUNT",
+      "public_name": "Exponencial saturante",
+      "short_name": "Exp. saturante",
+      "implementation_expression": "P = Pmax * (1 - exp(-k * 100 * Bi))",
+      "equation_plain": "P_i = P_max · [1 - e^(-k · 100 · B_i)]",
+      "equation_mathml": "<math display=\"block\" aria-label=\"P sub i igual a P máximo por uno menos e elevado a menos k por cien por B sub i\"><msub><mi>P</mi><mi>i</mi></msub><mo>=</mo><msub><mi>P</mi><mi>max</mi></msub><mo>·</mo><mfenced><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mo>−</mo><mi>k</mi><mo>·</mo><mn>100</mn><mo>·</mo><msub><mi>B</mi><mi>i</mi></msub></mrow></msup></mfenced></math>",
+      "reference_type": "Absoluta",
+      "dependency": "Sólo la baja de cada oferta y el parámetro k",
+      "parameters": ["k"],
+      "description": "La puntuación crece con la baja y se aproxima progresivamente a Pmax sin depender de otras ofertas.",
+      "behavior": "Curva cóncava y saturante.",
+      "particularities": [
+        "Una misma baja mantiene su puntuación aunque cambien las ofertas de terceros.",
+        "El parámetro k controla la rapidez de saturación."
+      ],
+      "zero_discount_behavior": "Obtiene cero puntos.",
+      "verified_equivalences": [],
+      "source_alignment": ["motor", "workbook", "presentacion"],
+      "discrepancies": [
+        "La presentación escribe e^(-k·Bi); el motor usa Bi como fracción y explicita el factor 100 para trabajar en puntos porcentuales."
+      ]
+    },
+    {
+      "method_id": "DISCOUNT_THRESHOLD_TWO_SEGMENTS",
+      "public_name": "Umbral de saciedad en dos tramos",
+      "short_name": "Dos tramos",
+      "implementation_expression": "P = piecewise(m1*Bi, m1*Bt + m2*(Bi-Bt)/(Bmax-Bt))",
+      "equation_plain": "P_i = s·m1·100·B_i si B_i ≤ B_t; P_i = s·[m1·100·B_t + m2·(B_i-B_t)/(B_max-B_t)] si B_i > B_t",
+      "equation_mathml": "<math display=\"block\" aria-label=\"Puntuación por tramos antes y después del umbral de baja\"><msub><mi>P</mi><mi>i</mi></msub><mo>=</mo><mfenced open=\"{\" close=\"\"><mtable><mtr><mtd><mi>s</mi><mo>·</mo><msub><mi>m</mi><mn>1</mn></msub><mo>·</mo><mn>100</mn><mo>·</mo><msub><mi>B</mi><mi>i</mi></msub></mtd><mtd><mtext>si </mtext><msub><mi>B</mi><mi>i</mi></msub><mo>≤</mo><msub><mi>B</mi><mi>t</mi></msub></mtd></mtr><mtr><mtd><mi>s</mi><mo>·</mo><mfenced><msub><mi>m</mi><mn>1</mn></msub><mo>·</mo><mn>100</mn><mo>·</mo><msub><mi>B</mi><mi>t</mi></msub><mo>+</mo><msub><mi>m</mi><mn>2</mn></msub><mo>·</mo><mfrac><mrow><msub><mi>B</mi><mi>i</mi></msub><mo>−</mo><msub><mi>B</mi><mi>t</mi></msub></mrow><mrow><msub><mi>B</mi><mi>max</mi></msub><mo>−</mo><msub><mi>B</mi><mi>t</mi></msub></mrow></mfrac></mfenced></mtd><mtd><mtext>si </mtext><msub><mi>B</mi><mi>i</mi></msub><mo>&gt;</mo><msub><mi>B</mi><mi>t</mi></msub></mtd></mtr></mtable></mfenced></math>",
+      "reference_type": "Mixta",
+      "dependency": "Umbral fijo en el primer tramo y Bmax en el segundo",
+      "parameters": ["first_slope", "threshold", "tail_points"],
+      "description": "Aplica una pendiente inicial hasta un umbral y reparte después los puntos restantes hasta la baja máxima observada.",
+      "behavior": "Dos rectas con pendientes distintas y continuidad en el umbral.",
+      "particularities": [
+        "El primer tramo responde a parámetros fijos.",
+        "El segundo tramo cambia si cambia Bmax."
+      ],
+      "zero_discount_behavior": "Obtiene cero puntos.",
+      "verified_equivalences": [],
+      "source_alignment": ["motor", "workbook", "presentacion"],
+      "discrepancies": [
+        "La presentación la agrupa con las fórmulas absolutas, pero la implementación validada depende de Bmax en el segundo tramo y por ello se clasifica como mixta.",
+        "El motor aplica un factor de escala para adaptar los coeficientes documentados al Pmax del escenario."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="description" content="Laboratorio teórico de fórmulas de valoración económica.">
+  <title>Laboratorio de fórmulas · {{ catalog.title }}</title>
+  <link rel="stylesheet" href="{{ stylesheet_url }}">
+  <script id="formula-catalog" type="application/json">{{ catalog | tojson }}</script>
+  <script defer src="{{ format_script_url }}"></script>
+  <script defer src="{{ lab_script_url }}"></script>
+</head>
+<body class="fp-body fp-lab-page">
+  <header class="fp-topbar">
+    <a class="fp-product" href="{{ home_url }}" aria-label="Volver al inicio">
+      <span class="fp-product-mark" aria-hidden="true">f(x)</span>
+      <span><strong>Laboratorio de fórmulas</strong><small>Comportamiento teórico</small></span>
+    </a>
+    <nav class="fp-nav" aria-label="Navegación principal">
+      <a href="{{ analyzer_url }}?perfil=administracion">Analizador</a>
+      <a aria-current="page" href="{{ lab_url }}">Laboratorio</a>
+    </nav>
+  </header>
+
+  <main class="fp-lab-shell">
+    <header class="fp-lab-intro">
+      <p class="fp-kicker">Teoría antes del caso</p>
+      <h1>Comprender cómo reparte puntos cada fórmula</h1>
+      <p>Estas curvas representan comportamiento teórico. Los casos reales pueden producir resultados diferentes cuando la fórmula depende de datos relativos del conjunto de ofertas.</p>
+      <div class="fp-theory-types">
+        <div><strong>Relativas</strong><span>La curva depende de Omin, Bmax u otros datos del conjunto.</span></div>
+        <div><strong>Absolutas</strong><span>Una misma baja mantiene su posición con parámetros fijos.</span></div>
+        <div><strong>Umbrales</strong><span>La pendiente cambia a partir de una baja definida.</span></div>
+      </div>
+    </header>
+
+    <section class="fp-lab-workspace" aria-label="Laboratorio interactivo">
+      <aside class="fp-lab-formulas">
+        <label for="lab-method">Fórmula</label>
+        <select id="lab-method"></select>
+        <nav id="lab-method-list" aria-label="Catálogo de fórmulas"></nav>
+      </aside>
+
+      <section class="fp-lab-stage" aria-labelledby="lab-title">
+        <div class="fp-lab-title-row">
+          <div><span class="fp-type-badge" id="lab-type"></span><h2 id="lab-title">Cargando fórmula…</h2></div>
+          <a class="fp-button fp-button-outline" id="real-cases-link" href="{{ analyzer_url }}?perfil=administracion">Ver en casos reales</a>
+        </div>
+        <div class="fp-equation-display" id="lab-equation"></div>
+        <p class="fp-lab-description" id="lab-description"></p>
+        <div class="fp-lab-controls" id="lab-controls"></div>
+        <div class="fp-status" id="lab-status" role="status" aria-live="polite">Calculando curva teórica…</div>
+        <div class="fp-chart-wrap fp-lab-chart-wrap">
+          <svg id="lab-chart" viewBox="0 0 920 480" role="img" aria-labelledby="lab-chart-title lab-chart-desc">
+            <title id="lab-chart-title">Curva teórica de la fórmula seleccionada</title>
+            <desc id="lab-chart-desc">Comparación de la puntuación teórica para bajas entre cero y treinta por ciento.</desc>
+          </svg>
+        </div>
+        <div class="fp-chart-legend" id="lab-legend"></div>
+      </section>
+
+      <aside class="fp-lab-notes">
+        <section><p class="fp-kicker">Dependencia</p><h3 id="lab-dependency"></h3><p id="lab-dependency-copy"></p></section>
+        <section><p class="fp-kicker">Baja 0 %</p><h3 id="lab-zero-score"></h3><p id="lab-zero-copy"></p></section>
+        <section><p class="fp-kicker">Particularidades</p><ul id="lab-particularities"></ul></section>
+        <section id="lab-equivalences-section"><p class="fp-kicker">Equivalencias verificadas</p><ul id="lab-equivalences"></ul></section>
+      </aside>
+    </section>
+
+    <section class="fp-formula-reference" aria-labelledby="catalog-title">
+      <div><p class="fp-kicker">FORMULA_CANONICAL_CATALOG_V1</p><h2 id="catalog-title">Catálogo canónico revisado</h2><p>Nombres públicos, ecuaciones y propiedades contrastados con la implementación actual. Las discrepancias se conservan como asuntos de validación, no se corrigen por intuición.</p></div>
+      <div id="canonical-cards" class="fp-canonical-grid"></div>
+    </section>
+  </main>
+
+  <footer class="fp-footer"><p>Las curvas del laboratorio se calculan con el mismo backend validado que los casos reales.</p><p>{{ catalog.canonical_catalog_version }}</p></footer>
+</body>
+</html>

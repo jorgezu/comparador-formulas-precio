@@ -1,0 +1,1320 @@
+{
+  "schema_version": "formula_public_cases_v1",
+  "source_sha256": "a5ed783dfc58145588fb770bf43d2f3daada9b0f699ab935f46da030e2fdde94",
+  "case_count": 12,
+  "cases": [
+    {
+      "case_id": "case-1",
+      "label": "Caso 1 · SUMINISTROS",
+      "contract_type": "SUMINISTROS",
+      "tender_price": 1314194.04,
+      "pmax": 50.0,
+      "non_price_max": 50.0,
+      "minimum_offer": 788516.42,
+      "maximum_discount_pct": 40.00000030436905,
+      "mean_discount_pct": 18.83590080155026,
+      "actual_method_id": "DISCOUNT_MAX_POWER",
+      "actual_method_name": "Potencia sobre la baja máxima",
+      "actual_expression": "P = Pmax * (Bi / Bmax)^n",
+      "actual_formula_supported": true,
+      "actual_parameters": {
+        "n": 0.16666666666666666
+      },
+      "expected_maximum_discount_pct": 20.0,
+      "best_technical_offer": "LIC-1",
+      "lowest_price_offer": "LIC-7",
+      "actual_awardee": "LIC-7",
+      "offers": [
+        {
+          "offer_id": "lic-1",
+          "name": "LIC-1",
+          "price": 1138092.0,
+          "discount_eur": 176102.04000000004,
+          "discount_pct": 13.400002940205088,
+          "non_price_points": 46.26,
+          "economic_points": 41.66878342470849,
+          "total_points": 87.92878342470848
+        },
+        {
+          "offer_id": "lic-2",
+          "name": "LIC-2",
+          "price": 1126132.87,
+          "discount_eur": 188061.16999999993,
+          "discount_pct": 14.310000218841346,
+          "non_price_points": 42.879999999999995,
+          "economic_points": 42.12758969762871,
+          "total_points": 85.0075896976287
+        },
+        {
+          "offer_id": "lic-3",
+          "name": "LIC-3",
+          "price": 1117064.93,
+          "discount_eur": 197129.1100000001,
+          "discount_pct": 15.000000304369063,
+          "non_price_points": 35.56,
+          "economic_points": 42.45953332886944,
+          "total_points": 78.01953332886944
+        },
+        {
+          "offer_id": "lic-4",
+          "name": "LIC-4",
+          "price": 1115328.0,
+          "discount_eur": 198866.04000000004,
+          "discount_pct": 15.13216724069149,
+          "non_price_points": 41.94,
+          "economic_points": 42.52165837494087,
+          "total_points": 84.46165837494087
+        },
+        {
+          "offer_id": "lic-5",
+          "name": "LIC-5",
+          "price": 1090781.0,
+          "discount_eur": 223413.04000000004,
+          "discount_pct": 17.00000404810845,
+          "non_price_points": 37.51,
+          "economic_points": 43.35456596118585,
+          "total_points": 80.86456596118585
+        },
+        {
+          "offer_id": "lic-6",
+          "name": "LIC-6",
+          "price": 1090661.06,
+          "discount_eur": 223532.97999999998,
+          "discount_pct": 17.009130554267312,
+          "non_price_points": 41.26,
+          "economic_points": 43.35844426647852,
+          "total_points": 84.61844426647852
+        },
+        {
+          "offer_id": "lic-7",
+          "name": "LIC-7",
+          "price": 788516.42,
+          "discount_eur": 525677.62,
+          "discount_pct": 40.00000030436905,
+          "non_price_points": 44.129999999999995,
+          "economic_points": 50.0,
+          "total_points": 94.13
+        }
+      ],
+      "note": "Caso real basado en una licitación pública finalizada. Se preservan los datos económicos y resultados; se omiten los elementos identificativos del expediente y de los licitadores."
+    },
+    {
+      "case_id": "case-2",
+      "label": "Caso 2 · SUMINISTROS",
+      "contract_type": "SUMINISTROS",
+      "tender_price": 1538108.5,
+      "pmax": 50.0,
+      "non_price_max": 50.0,
+      "minimum_offer": 999770.53,
+      "maximum_discount_pct": 34.999999674925405,
+      "mean_discount_pct": 16.629434356115535,
+      "actual_method_id": "DISCOUNT_MAX_POWER",
+      "actual_method_name": "Potencia sobre la baja máxima",
+      "actual_expression": "P = Pmax * (Bi / Bmax)^n",
+      "actual_formula_supported": true,
+      "actual_parameters": {
+        "n": 0.16666666666666666
+      },
+      "expected_maximum_discount_pct": 20.0,
+      "best_technical_offer": "LIC-6",
+      "lowest_price_offer": "LIC-9",
+      "actual_awardee": "LIC-6",
+      "offers": [
+        {
+          "offer_id": "lic-1",
+          "name": "LIC-1",
+          "price": 1499656.0,
+          "discount_eur": 38452.5,
+          "discount_pct": 2.499986184329649,
+          "non_price_points": 37.81,
+          "economic_points": 32.206851121265316,
+          "total_points": 70.01685112126532
+        },
+        {
+          "offer_id": "lic-2",
+          "name": "LIC-2",
+          "price": 1384296.0,
+          "discount_eur": 153812.5,
+          "discount_pct": 10.000107274616843,
+          "non_price_points": 33.31,
+          "economic_points": 40.578199602593216,
+          "total_points": 73.88819960259322
+        },
+        {
+          "offer_id": "lic-3",
+          "name": "LIC-3",
+          "price": 1322619.5,
+          "discount_eur": 215489.0,
+          "discount_pct": 14.00999994473732,
+          "non_price_points": 45.25,
+          "economic_points": 42.923818835222164,
+          "total_points": 88.17381883522216
+        },
+        {
+          "offer_id": "lic-4",
+          "name": "LIC-4",
+          "price": 1307392.22,
+          "discount_eur": 230716.28000000003,
+          "discount_pct": 15.000000325074597,
+          "non_price_points": 34.76,
+          "economic_points": 43.41507367579151,
+          "total_points": 78.17507367579151
+        },
+        {
+          "offer_id": "lic-5",
+          "name": "LIC-5",
+          "price": 1306752.0,
+          "discount_eur": 231356.5,
+          "discount_pct": 15.041624176707948,
+          "non_price_points": 37.13,
+          "economic_points": 43.43512941665568,
+          "total_points": 80.56512941665568
+        },
+        {
+          "offer_id": "lic-6",
+          "name": "LIC-6",
+          "price": 1261248.0,
+          "discount_eur": 276860.5,
+          "discount_pct": 18.000063064471718,
+          "non_price_points": 47.82,
+          "economic_points": 44.75459884708115,
+          "total_points": 92.57459884708115
+        },
+        {
+          "offer_id": "lic-7",
+          "name": "LIC-7",
+          "price": 1230486.8,
+          "discount_eur": 307621.69999999995,
+          "discount_pct": 20.0,
+          "non_price_points": 46.38,
+          "economic_points": 45.54740760831904,
+          "total_points": 91.92740760831904
+        },
+        {
+          "offer_id": "lic-8",
+          "name": "LIC-8",
+          "price": 1228746.76,
+          "discount_eur": 309361.74,
+          "discount_pct": 20.113128560176346,
+          "non_price_points": 40.25,
+          "economic_points": 45.590246027558365,
+          "total_points": 85.84024602755836
+        },
+        {
+          "offer_id": "lic-9",
+          "name": "LIC-9",
+          "price": 999770.53,
+          "discount_eur": 538337.97,
+          "discount_pct": 34.999999674925405,
+          "non_price_points": 39.25,
+          "economic_points": 50.0,
+          "total_points": 89.25
+        }
+      ],
+      "note": "Caso real basado en una licitación pública finalizada. Se preservan los datos económicos y resultados; se omiten los elementos identificativos del expediente y de los licitadores."
+    },
+    {
+      "case_id": "case-3",
+      "label": "Caso 3 · SUMINISTROS",
+      "contract_type": "SUMINISTROS",
+      "tender_price": 825833.33,
+      "pmax": 39.0,
+      "non_price_max": 61.0,
+      "minimum_offer": 625000.0,
+      "maximum_discount_pct": 24.318869522982315,
+      "mean_discount_pct": 8.90752703609784,
+      "actual_method_id": "DISCOUNT_MAX_POWER",
+      "actual_method_name": "Potencia sobre la baja máxima",
+      "actual_expression": "P = Pmax * (Bi / Bmax)^n",
+      "actual_formula_supported": true,
+      "actual_parameters": {
+        "n": 0.16666666666666666
+      },
+      "expected_maximum_discount_pct": 15.0,
+      "best_technical_offer": "LIC-3",
+      "lowest_price_offer": "LIC-7",
+      "actual_awardee": "LIC-5",
+      "offers": [
+        {
+          "offer_id": "lic-1",
+          "name": "LIC-1",
+          "price": 825000.0,
+          "discount_eur": 833.3299999999581,
+          "discount_pct": 0.10090777033665596,
+          "non_price_points": 43.0,
+          "economic_points": 15.633689358340789,
+          "total_points": 58.63368935834079
+        },
+        {
+          "offer_id": "lic-2",
+          "name": "LIC-2",
+          "price": 817575.0,
+          "discount_eur": 8258.329999999958,
+          "discount_pct": 0.999999600403626,
+          "non_price_points": 54.0,
+          "economic_points": 22.912581055399215,
+          "total_points": 76.91258105539922
+        },
+        {
+          "offer_id": "lic-3",
+          "name": "LIC-3",
+          "price": 790974.0,
+          "discount_eur": 34859.32999999996,
+          "discount_pct": 4.221109603314262,
+          "non_price_points": 56.0,
+          "economic_points": 29.128077051482677,
+          "total_points": 85.12807705148268
+        },
+        {
+          "offer_id": "lic-4",
+          "name": "LIC-4",
+          "price": 768025.02,
+          "discount_eur": 57808.30999999994,
+          "discount_pct": 6.99999720282541,
+          "non_price_points": 48.0,
+          "economic_points": 31.690105693890615,
+          "total_points": 79.69010569389062
+        },
+        {
+          "offer_id": "lic-5",
+          "name": "LIC-5",
+          "price": 732105.0,
+          "discount_eur": 93728.32999999996,
+          "discount_pct": 11.349545555396748,
+          "non_price_points": 56.0,
+          "economic_points": 34.348184628338686,
+          "total_points": 90.34818462833869
+        },
+        {
+          "offer_id": "lic-6",
+          "name": "LIC-6",
+          "price": 707225.0,
+          "discount_eur": 118608.32999999996,
+          "discount_pct": 14.36225999742587,
+          "non_price_points": 42.0,
+          "economic_points": 35.72271899565732,
+          "total_points": 77.72271899565732
+        },
+        {
+          "offer_id": "lic-7",
+          "name": "LIC-7",
+          "price": 625000.0,
+          "discount_eur": 200833.32999999996,
+          "discount_pct": 24.318869522982315,
+          "non_price_points": 51.0,
+          "economic_points": 39.0,
+          "total_points": 90.0
+        }
+      ],
+      "note": "Caso real basado en una licitación pública finalizada. Se preservan los datos económicos y resultados; se omiten los elementos identificativos del expediente y de los licitadores."
+    },
+    {
+      "case_id": "case-4",
+      "label": "Caso 4 · SUMINISTROS",
+      "contract_type": "SUMINISTROS",
+      "tender_price": 825833.33,
+      "pmax": 34.0,
+      "non_price_max": 66.0,
+      "minimum_offer": 552633.0,
+      "maximum_discount_pct": 33.08177571375086,
+      "mean_discount_pct": 25.825106755004555,
+      "actual_method_id": "DISCOUNT_MAX_POWER",
+      "actual_method_name": "Potencia sobre la baja máxima",
+      "actual_expression": "P = Pmax * (Bi / Bmax)^n",
+      "actual_formula_supported": true,
+      "actual_parameters": {
+        "n": 0.16666666666666666
+      },
+      "expected_maximum_discount_pct": 15.0,
+      "best_technical_offer": "LIC-9",
+      "lowest_price_offer": "LIC-11",
+      "actual_awardee": "LIC-9",
+      "offers": [
+        {
+          "offer_id": "lic-1",
+          "name": "LIC-1",
+          "price": 685500.0,
+          "discount_eur": 140333.32999999996,
+          "discount_pct": 16.992936092807003,
+          "non_price_points": 47.0,
+          "economic_points": 30.42698022543655,
+          "total_points": 77.42698022543655
+        },
+        {
+          "offer_id": "lic-2",
+          "name": "LIC-2",
+          "price": 675000.0,
+          "discount_eur": 150833.32999999996,
+          "discount_pct": 18.2643790848209,
+          "non_price_points": 61.0,
+          "economic_points": 30.795098696250307,
+          "total_points": 91.7950986962503
+        },
+        {
+          "offer_id": "lic-3",
+          "name": "LIC-3",
+          "price": 672770.0,
+          "discount_eur": 153063.32999999996,
+          "discount_pct": 18.5344093583629,
+          "non_price_points": 57.0,
+          "economic_points": 30.8705172740392,
+          "total_points": 87.8705172740392
+        },
+        {
+          "offer_id": "lic-4",
+          "name": "LIC-4",
+          "price": 651000.0,
+          "discount_eur": 174833.32999999996,
+          "discount_pct": 21.17053449513838,
+          "non_price_points": 59.0,
+          "economic_points": 31.56235633826236,
+          "total_points": 90.56235633826236
+        },
+        {
+          "offer_id": "lic-5",
+          "name": "LIC-5",
+          "price": 618399.2,
+          "discount_eur": 207434.13,
+          "discount_pct": 25.11815913266664,
+          "non_price_points": 57.0,
+          "economic_points": 32.47472006803706,
+          "total_points": 89.47472006803706
+        },
+        {
+          "offer_id": "lic-6",
+          "name": "LIC-6",
+          "price": 597000.0,
+          "discount_eur": 228833.32999999996,
+          "discount_pct": 27.709384168352706,
+          "non_price_points": 56.0,
+          "economic_points": 33.010486674844884,
+          "total_points": 89.01048667484488
+        },
+        {
+          "offer_id": "lic-7",
+          "name": "LIC-7",
+          "price": 591160.2,
+          "discount_eur": 234673.13,
+          "discount_pct": 28.416524433568213,
+          "non_price_points": 59.0,
+          "economic_points": 33.14942055426796,
+          "total_points": 92.14942055426796
+        },
+        {
+          "offer_id": "lic-8",
+          "name": "LIC-8",
+          "price": 570000.0,
+          "discount_eur": 255833.32999999996,
+          "discount_pct": 30.978809004959874,
+          "non_price_points": 57.0,
+          "economic_points": 33.62984774245689,
+          "total_points": 90.62984774245689
+        },
+        {
+          "offer_id": "lic-9",
+          "name": "LIC-9",
+          "price": 569108.5,
+          "discount_eur": 256724.82999999996,
+          "discount_pct": 31.08676056947229,
+          "non_price_points": 62.0,
+          "economic_points": 33.64935104608314,
+          "total_points": 95.64935104608314
+        },
+        {
+          "offer_id": "lic-10",
+          "name": "LIC-10",
+          "price": 555600.0,
+          "discount_eur": 270233.32999999996,
+          "discount_pct": 32.72250225115036,
+          "non_price_points": 61.0,
+          "economic_points": 33.938178739368055,
+          "total_points": 94.93817873936806
+        },
+        {
+          "offer_id": "lic-11",
+          "name": "LIC-11",
+          "price": 552633.0,
+          "discount_eur": 273200.32999999996,
+          "discount_pct": 33.08177571375086,
+          "non_price_points": 57.0,
+          "economic_points": 34.0,
+          "total_points": 91.0
+        }
+      ],
+      "note": "Caso real basado en una licitación pública finalizada. Se preservan los datos económicos y resultados; se omiten los elementos identificativos del expediente y de los licitadores."
+    },
+    {
+      "case_id": "case-5",
+      "label": "Caso 5 · OBRAS",
+      "contract_type": "OBRAS",
+      "tender_price": 7501032.35,
+      "pmax": 50.0,
+      "non_price_max": 50.0,
+      "minimum_offer": 6407250.35,
+      "maximum_discount_pct": 14.581752870323244,
+      "mean_discount_pct": 9.44728192741934,
+      "actual_method_id": "DISCOUNT_THRESHOLD_TWO_SEGMENTS",
+      "actual_method_name": "Lineal por tramos",
+      "actual_expression": "P = piecewise(m1*Bi, m1*Bt + m2*(Bi-Bt)/(Bmax-Bt))",
+      "actual_formula_supported": true,
+      "actual_parameters": {
+        "first_slope": 6.0,
+        "threshold": 0.08,
+        "tail_points": 2.0
+      },
+      "expected_maximum_discount_pct": 10.0,
+      "best_technical_offer": "LIC-3",
+      "lowest_price_offer": "LIC-14",
+      "actual_awardee": "LIC-3",
+      "offers": [
+        {
+          "offer_id": "lic-1",
+          "name": "LIC-1",
+          "price": 7125980.73,
+          "discount_eur": 375051.6199999992,
+          "discount_pct": 5.000000033328735,
+          "non_price_points": 40.4,
+          "economic_points": 30.000000199972412,
+          "total_points": 70.40000019997241
+        },
+        {
+          "offer_id": "lic-2",
+          "name": "LIC-2",
+          "price": 6897199.25,
+          "discount_eur": 603833.0999999996,
+          "discount_pct": 8.049999944340989,
+          "non_price_points": 42.4,
+          "economic_points": 48.01519350401819,
+          "total_points": 90.41519350401819
+        },
+        {
+          "offer_id": "lic-3",
+          "name": "LIC-3",
+          "price": 6897199.0,
+          "discount_eur": 603833.3499999996,
+          "discount_pct": 8.050003277215565,
+          "non_price_points": 45.4,
+          "economic_points": 48.01519451678019,
+          "total_points": 93.41519451678019
+        },
+        {
+          "offer_id": "lic-4",
+          "name": "LIC-4",
+          "price": 6863250.25,
+          "discount_eur": 637782.0999999996,
+          "discount_pct": 8.502590980026898,
+          "non_price_points": 42.0,
+          "economic_points": 48.15272253149857,
+          "total_points": 90.15272253149857
+        },
+        {
+          "offer_id": "lic-5",
+          "name": "LIC-5",
+          "price": 6862694.5,
+          "discount_eur": 638337.8499999996,
+          "discount_pct": 8.509999960205473,
+          "non_price_points": 38.4,
+          "economic_points": 48.15497390140704,
+          "total_points": 86.55497390140704
+        },
+        {
+          "offer_id": "lic-6",
+          "name": "LIC-6",
+          "price": 6825939.44,
+          "discount_eur": 675092.9099999992,
+          "discount_pct": 8.999999980002743,
+          "non_price_points": 40.8,
+          "economic_points": 48.30387041254973,
+          "total_points": 89.10387041254972
+        },
+        {
+          "offer_id": "lic-7",
+          "name": "LIC-7",
+          "price": 6825939.44,
+          "discount_eur": 675092.9099999992,
+          "discount_pct": 8.999999980002743,
+          "non_price_points": 40.2,
+          "economic_points": 48.30387041254973,
+          "total_points": 88.50387041254973
+        },
+        {
+          "offer_id": "lic-8",
+          "name": "LIC-8",
+          "price": 6824618.89,
+          "discount_eur": 676413.46,
+          "discount_pct": 9.017604890078896,
+          "non_price_points": 42.0,
+          "economic_points": 48.30922002394445,
+          "total_points": 90.30922002394445
+        },
+        {
+          "offer_id": "lic-9",
+          "name": "LIC-9",
+          "price": 6810937.37,
+          "discount_eur": 690094.9799999995,
+          "discount_pct": 9.200000050659687,
+          "non_price_points": 35.0,
+          "economic_points": 48.364644517745546,
+          "total_points": 83.36464451774555
+        },
+        {
+          "offer_id": "lic-10",
+          "name": "LIC-10",
+          "price": 6754680.0,
+          "discount_eur": 746352.3499999996,
+          "discount_pct": 9.949995083010137,
+          "non_price_points": 37.4,
+          "economic_points": 48.59254582219352,
+          "total_points": 85.99254582219352
+        },
+        {
+          "offer_id": "lic-11",
+          "name": "LIC-11",
+          "price": 6750929.12,
+          "discount_eur": 750103.2299999995,
+          "discount_pct": 9.999999933342503,
+          "non_price_points": 42.8,
+          "economic_points": 48.607740816997364,
+          "total_points": 91.40774081699736
+        },
+        {
+          "offer_id": "lic-12",
+          "name": "LIC-12",
+          "price": 6684169.93,
+          "discount_eur": 816862.4199999999,
+          "discount_pct": 10.889999961138681,
+          "non_price_points": 45.4,
+          "economic_points": 48.8781854980212,
+          "total_points": 94.2781854980212
+        },
+        {
+          "offer_id": "lic-13",
+          "name": "LIC-13",
+          "price": 6562653.2,
+          "discount_eur": 938379.1499999994,
+          "discount_pct": 12.51000004019446,
+          "non_price_points": 42.4,
+          "economic_points": 49.37045560021853,
+          "total_points": 91.77045560021853
+        },
+        {
+          "offer_id": "lic-14",
+          "name": "LIC-14",
+          "price": 6407250.35,
+          "discount_eur": 1093782.0,
+          "discount_pct": 14.581752870323244,
+          "non_price_points": 37.4,
+          "economic_points": 50.00000000000001,
+          "total_points": 87.4
+        }
+      ],
+      "note": "Caso real basado en una licitación pública finalizada. Se preservan los datos económicos y resultados; se omiten los elementos identificativos del expediente y de los licitadores."
+    },
+    {
+      "case_id": "case-6",
+      "label": "Caso 6 · OBRAS",
+      "contract_type": "OBRAS",
+      "tender_price": 2035810.6099999999,
+      "pmax": 40.0,
+      "non_price_max": 60.0,
+      "minimum_offer": 1697662.47,
+      "maximum_discount_pct": 16.609999885991357,
+      "mean_discount_pct": 9.164764922148949,
+      "actual_method_id": "NORMALIZED_PRICE_GAP_POWER",
+      "actual_method_name": "Brecha normalizada potencial",
+      "actual_expression": "P = Pmax * (1 - ((Oi - Omin) / (PL - Omin))^n)",
+      "actual_formula_supported": true,
+      "actual_parameters": {
+        "n": 3.0
+      },
+      "expected_maximum_discount_pct": 15.0,
+      "best_technical_offer": "LIC-11",
+      "lowest_price_offer": "LIC-15",
+      "actual_awardee": "LIC-11",
+      "offers": [
+        {
+          "offer_id": "lic-1",
+          "name": "LIC-1",
+          "price": 1974939.87,
+          "discount_eur": 60870.73999999976,
+          "discount_pct": 2.9900001356216412,
+          "non_price_points": 48.0,
+          "economic_points": 17.94625230353151,
+          "total_points": 65.94625230353151
+        },
+        {
+          "offer_id": "lic-2",
+          "name": "LIC-2",
+          "price": 1951324.47,
+          "discount_eur": 84486.1399999999,
+          "discount_pct": 4.149999984527043,
+          "non_price_points": 48.5,
+          "economic_points": 23.11483847147855,
+          "total_points": 71.61483847147855
+        },
+        {
+          "offer_id": "lic-3",
+          "name": "LIC-3",
+          "price": 1934020.08,
+          "discount_eur": 101790.5299999998,
+          "discount_pct": 4.999999975439748,
+          "non_price_points": 45.0,
+          "economic_points": 26.340092700497422,
+          "total_points": 71.34009270049742
+        },
+        {
+          "offer_id": "lic-4",
+          "name": "LIC-4",
+          "price": 1910000.0,
+          "discount_eur": 125810.60999999987,
+          "discount_pct": 6.179877901314203,
+          "non_price_points": 41.5,
+          "economic_points": 30.09580309269076,
+          "total_points": 71.59580309269076
+        },
+        {
+          "offer_id": "lic-5",
+          "name": "LIC-5",
+          "price": 1903482.92,
+          "discount_eur": 132327.68999999994,
+          "discount_pct": 6.500000017192166,
+          "non_price_points": 50.5,
+          "economic_points": 30.980041222022805,
+          "total_points": 81.4800412220228
+        },
+        {
+          "offer_id": "lic-6",
+          "name": "LIC-6",
+          "price": 1893035.43,
+          "discount_eur": 142775.17999999993,
+          "discount_pct": 7.013185769770596,
+          "non_price_points": 43.0,
+          "economic_points": 32.2850635750482,
+          "total_points": 75.2850635750482
+        },
+        {
+          "offer_id": "lic-7",
+          "name": "LIC-7",
+          "price": 1884346.3,
+          "discount_eur": 151464.30999999982,
+          "discount_pct": 7.44000003025821,
+          "non_price_points": 48.5,
+          "economic_points": 33.26931773333362,
+          "total_points": 81.76931773333362
+        },
+        {
+          "offer_id": "lic-8",
+          "name": "LIC-8",
+          "price": 1882921.23,
+          "discount_eur": 152889.3799999999,
+          "discount_pct": 7.510000156645215,
+          "non_price_points": 44.5,
+          "economic_points": 33.42228214143968,
+          "total_points": 77.92228214143968
+        },
+        {
+          "offer_id": "lic-9",
+          "name": "LIC-9",
+          "price": 1867703.42,
+          "discount_eur": 168107.18999999994,
+          "discount_pct": 8.257506330610978,
+          "non_price_points": 44.5,
+          "economic_points": 34.91372836049115,
+          "total_points": 79.41372836049115
+        },
+        {
+          "offer_id": "lic-10",
+          "name": "LIC-10",
+          "price": 1820421.85,
+          "discount_eur": 215388.75999999978,
+          "discount_pct": 10.579999875332206,
+          "non_price_points": 43.0,
+          "economic_points": 38.086171394242086,
+          "total_points": 81.08617139424209
+        },
+        {
+          "offer_id": "lic-11",
+          "name": "LIC-11",
+          "price": 1811754.33,
+          "discount_eur": 224056.2799999998,
+          "discount_pct": 11.005752642187074,
+          "non_price_points": 51.5,
+          "economic_points": 38.46360472236114,
+          "total_points": 89.96360472236114
+        },
+        {
+          "offer_id": "lic-12",
+          "name": "LIC-12",
+          "price": 1775226.85,
+          "discount_eur": 260583.75999999978,
+          "discount_pct": 12.800000094311317,
+          "non_price_points": 42.5,
+          "economic_points": 39.51724591355813,
+          "total_points": 82.01724591355813
+        },
+        {
+          "offer_id": "lic-13",
+          "name": "LIC-13",
+          "price": 1725244.63,
+          "discount_eur": 310565.98,
+          "discount_pct": 15.255150870836653,
+          "non_price_points": 46.0,
+          "economic_points": 39.97829180056357,
+          "total_points": 85.97829180056357
+        },
+        {
+          "offer_id": "lic-14",
+          "name": "LIC-14",
+          "price": 1706416.45,
+          "discount_eur": 329394.1599999999,
+          "discount_pct": 16.18000016219583,
+          "non_price_points": 42.5,
+          "economic_points": 39.99930600613257,
+          "total_points": 82.49930600613257
+        },
+        {
+          "offer_id": "lic-15",
+          "name": "LIC-15",
+          "price": 1697662.47,
+          "discount_eur": 338148.1399999999,
+          "discount_pct": 16.609999885991357,
+          "non_price_points": 41.5,
+          "economic_points": 40.0,
+          "total_points": 81.5
+        }
+      ],
+      "note": "Caso real basado en una licitación pública finalizada. Se preservan los datos económicos y resultados; se omiten los elementos identificativos del expediente y de los licitadores."
+    },
+    {
+      "case_id": "case-7",
+      "label": "Caso 7 · OBRAS",
+      "contract_type": "OBRAS",
+      "tender_price": 20869858.37,
+      "pmax": 25.0,
+      "non_price_max": 75.0,
+      "minimum_offer": 17739379.61,
+      "maximum_discount_pct": 15.000000021562204,
+      "mean_discount_pct": 13.433977678689924,
+      "actual_method_id": "NORMALIZED_PRICE_GAP_POWER",
+      "actual_method_name": "Brecha normalizada potencial",
+      "actual_expression": "P = Pmax * (1 - ((Oi - Omin) / (PL - Omin))^n)",
+      "actual_formula_supported": true,
+      "actual_parameters": {
+        "n": 5.0
+      },
+      "expected_maximum_discount_pct": 10.0,
+      "best_technical_offer": "LIC-4",
+      "lowest_price_offer": "LIC-4",
+      "actual_awardee": "LIC-4",
+      "offers": [
+        {
+          "offer_id": "lic-1",
+          "name": "LIC-1",
+          "price": 18403000.0,
+          "discount_eur": 2466858.370000001,
+          "discount_pct": 11.820196985840882,
+          "non_price_points": 47.1,
+          "economic_points": 24.98929751055028,
+          "total_points": 72.08929751055028
+        },
+        {
+          "offer_id": "lic-2",
+          "name": "LIC-2",
+          "price": 18362196.41,
+          "discount_eur": 2507661.960000001,
+          "discount_pct": 12.01571144155302,
+          "non_price_points": 46.0,
+          "economic_points": 24.992207302906394,
+          "total_points": 70.9922073029064
+        },
+        {
+          "offer_id": "lic-3",
+          "name": "LIC-3",
+          "price": 17760249.0,
+          "discount_eur": 3109609.370000001,
+          "discount_pct": 14.900002265803595,
+          "non_price_points": 52.0,
+          "economic_points": 24.99999999967082,
+          "total_points": 76.99999999967082
+        },
+        {
+          "offer_id": "lic-4",
+          "name": "LIC-4",
+          "price": 17739379.61,
+          "discount_eur": 3130478.7600000016,
+          "discount_pct": 15.000000021562204,
+          "non_price_points": 67.3,
+          "economic_points": 25.0,
+          "total_points": 92.3
+        }
+      ],
+      "note": "Caso real basado en una licitación pública finalizada. Se preservan los datos económicos y resultados; se omiten los elementos identificativos del expediente y de los licitadores."
+    },
+    {
+      "case_id": "case-8",
+      "label": "Caso 8 · OBRAS",
+      "contract_type": "OBRAS",
+      "tender_price": 1602962.61,
+      "pmax": 40.0,
+      "non_price_max": 60.0,
+      "minimum_offer": 1411842.17,
+      "maximum_discount_pct": 11.922950592091487,
+      "mean_discount_pct": 8.518037303248335,
+      "actual_method_id": "EXPECTED_MAX_DISCOUNT_POWER",
+      "actual_method_name": "Exponencial relativa con baja máxima esperada",
+      "actual_expression": "P = Pmax si Bi >= Besperada; en otro caso, P = Pmax * (1 - ((Oi - Oref) / (PL - Oref))^n)",
+      "actual_formula_supported": false,
+      "actual_parameters": {
+        "n": 3.0,
+        "expected_maximum_discount_pct": 10.0
+      },
+      "expected_maximum_discount_pct": 10.0,
+      "best_technical_offer": "LIC-13",
+      "lowest_price_offer": "LIC-13",
+      "actual_awardee": "LIC-13",
+      "offers": [
+        {
+          "offer_id": "lic-1",
+          "name": "LIC-1",
+          "price": 1601840.54,
+          "discount_eur": 1122.0700000000652,
+          "discount_pct": 0.06999976125457257,
+          "non_price_points": 42.0,
+          "economic_points": 0.8341309001908286,
+          "total_points": 42.83413090019083
+        },
+        {
+          "offer_id": "lic-2",
+          "name": "LIC-2",
+          "price": 1600998.32,
+          "discount_eur": 1964.2900000000373,
+          "discount_pct": 0.12254122384052597,
+          "non_price_points": 41.5,
+          "economic_points": 1.452548678071878,
+          "total_points": 42.95254867807188
+        },
+        {
+          "offer_id": "lic-3",
+          "name": "LIC-3",
+          "price": 1472962.34,
+          "discount_eur": 130000.27000000002,
+          "discount_pct": 8.110000145293471,
+          "non_price_points": 42.0,
+          "economic_points": 39.729949323967475,
+          "total_points": 81.72994932396747
+        },
+        {
+          "offer_id": "lic-4",
+          "name": "LIC-4",
+          "price": 1471519.67,
+          "discount_eur": 131442.94000000018,
+          "discount_pct": 8.200000373059241,
+          "non_price_points": 39.0,
+          "economic_points": 39.76672016493457,
+          "total_points": 78.76672016493457
+        },
+        {
+          "offer_id": "lic-5",
+          "name": "LIC-5",
+          "price": 1442666.35,
+          "discount_eur": 160296.26,
+          "discount_pct": 9.999999937615513,
+          "non_price_points": 33.0,
+          "economic_points": 40.0,
+          "total_points": 73.0
+        },
+        {
+          "offer_id": "lic-6",
+          "name": "LIC-6",
+          "price": 1442666.35,
+          "discount_eur": 160296.26,
+          "discount_pct": 9.999999937615513,
+          "non_price_points": 44.0,
+          "economic_points": 40.0,
+          "total_points": 84.0
+        },
+        {
+          "offer_id": "lic-7",
+          "name": "LIC-7",
+          "price": 1442666.35,
+          "discount_eur": 160296.26,
+          "discount_pct": 9.999999937615513,
+          "non_price_points": 49.0,
+          "economic_points": 40.0,
+          "total_points": 89.0
+        },
+        {
+          "offer_id": "lic-8",
+          "name": "LIC-8",
+          "price": 1442666.35,
+          "discount_eur": 160296.26,
+          "discount_pct": 9.999999937615513,
+          "non_price_points": 40.0,
+          "economic_points": 40.0,
+          "total_points": 80.0
+        },
+        {
+          "offer_id": "lic-9",
+          "name": "LIC-9",
+          "price": 1442666.35,
+          "discount_eur": 160296.26,
+          "discount_pct": 9.999999937615513,
+          "non_price_points": 46.5,
+          "economic_points": 40.0,
+          "total_points": 86.5
+        },
+        {
+          "offer_id": "lic-10",
+          "name": "LIC-10",
+          "price": 1441864.86,
+          "discount_eur": 161097.75,
+          "discount_pct": 10.050000480048627,
+          "non_price_points": 48.0,
+          "economic_points": 40.0,
+          "total_points": 88.0
+        },
+        {
+          "offer_id": "lic-11",
+          "name": "LIC-11",
+          "price": 1437056.22,
+          "discount_eur": 165906.39000000013,
+          "discount_pct": 10.349985019301238,
+          "non_price_points": 40.0,
+          "economic_points": 40.0,
+          "total_points": 80.0
+        },
+        {
+          "offer_id": "lic-12",
+          "name": "LIC-12",
+          "price": 1412065.67,
+          "discount_eur": 190896.94000000018,
+          "discount_pct": 11.909007659261633,
+          "non_price_points": 37.0,
+          "economic_points": 40.0,
+          "total_points": 77.0
+        },
+        {
+          "offer_id": "lic-13",
+          "name": "LIC-13",
+          "price": 1411842.17,
+          "discount_eur": 191120.44000000018,
+          "discount_pct": 11.922950592091487,
+          "non_price_points": 51.0,
+          "economic_points": 40.0,
+          "total_points": 91.0
+        }
+      ],
+      "note": "Caso real basado en una licitación pública finalizada. Se preservan los datos económicos y resultados; se omiten los elementos identificativos del expediente y de los licitadores."
+    },
+    {
+      "case_id": "case-9",
+      "label": "Caso 9 · OBRAS",
+      "contract_type": "OBRAS",
+      "tender_price": 113800.13,
+      "pmax": 35.0,
+      "non_price_max": 65.0,
+      "minimum_offer": 73970.09,
+      "maximum_discount_pct": 34.99999516696511,
+      "mean_discount_pct": 28.28331742679029,
+      "actual_method_id": "NORMALIZED_PRICE_GAP_POWER",
+      "actual_method_name": "Brecha normalizada potencial",
+      "actual_expression": "P = Pmax * (1 - ((Oi - Omin) / (PL - Omin))^n)",
+      "actual_formula_supported": true,
+      "actual_parameters": {
+        "n": 3.0
+      },
+      "expected_maximum_discount_pct": 20.0,
+      "best_technical_offer": "LIC-4",
+      "lowest_price_offer": "LIC-5",
+      "actual_awardee": "LIC-4",
+      "offers": [
+        {
+          "offer_id": "lic-1",
+          "name": "LIC-1",
+          "price": 91500.0,
+          "discount_eur": 22300.130000000005,
+          "discount_pct": 19.59587392386986,
+          "non_price_points": 36.0,
+          "economic_points": 32.01616450530548,
+          "total_points": 68.01616450530548
+        },
+        {
+          "offer_id": "lic-2",
+          "name": "LIC-2",
+          "price": 84098.3,
+          "discount_eur": 29701.83,
+          "discount_pct": 26.099996546576882,
+          "non_price_points": 53.3,
+          "economic_points": 34.42451513126254,
+          "total_points": 87.72451513126254
+        },
+        {
+          "offer_id": "lic-3",
+          "name": "LIC-3",
+          "price": 80000.0,
+          "discount_eur": 33800.130000000005,
+          "discount_pct": 29.70131053453103,
+          "non_price_points": 48.7,
+          "economic_points": 34.87855816888906,
+          "total_points": 83.57855816888906
+        },
+        {
+          "offer_id": "lic-4",
+          "name": "LIC-4",
+          "price": 78500.0,
+          "discount_eur": 35300.130000000005,
+          "discount_pct": 31.01941096200857,
+          "non_price_points": 54.8,
+          "economic_points": 34.9485121760618,
+          "total_points": 89.7485121760618
+        },
+        {
+          "offer_id": "lic-5",
+          "name": "LIC-5",
+          "price": 73970.09,
+          "discount_eur": 39830.04000000001,
+          "discount_pct": 34.99999516696511,
+          "non_price_points": 37.9,
+          "economic_points": 35.00000000000001,
+          "total_points": 72.9
+        }
+      ],
+      "note": "Caso real basado en una licitación pública finalizada. Se preservan los datos económicos y resultados; se omiten los elementos identificativos del expediente y de los licitadores."
+    },
+    {
+      "case_id": "case-10",
+      "label": "Caso 10 · SERVICIOS",
+      "contract_type": "SERVICIOS",
+      "tender_price": 1867165.4,
+      "pmax": 40.0,
+      "non_price_max": 60.0,
+      "minimum_offer": 1503628.3,
+      "maximum_discount_pct": 19.46999981897693,
+      "mean_discount_pct": 12.026000053342885,
+      "actual_method_id": "NORMALIZED_PRICE_GAP_POWER",
+      "actual_method_name": "Brecha normalizada potencial",
+      "actual_expression": "P = Pmax * (1 - ((Oi - Omin) / (PL - Omin))^n)",
+      "actual_formula_supported": true,
+      "actual_parameters": {
+        "n": 5.0
+      },
+      "expected_maximum_discount_pct": 20.0,
+      "best_technical_offer": "LIC-2",
+      "lowest_price_offer": "LIC-5",
+      "actual_awardee": "LIC-2",
+      "offers": [
+        {
+          "offer_id": "lic-1",
+          "name": "LIC-1",
+          "price": 1705655.59,
+          "discount_eur": 161509.80999999982,
+          "discount_pct": 8.650000155315638,
+          "non_price_points": 56.25,
+          "economic_points": 37.8798504781991,
+          "total_points": 94.1298504781991
+        },
+        {
+          "offer_id": "lic-2",
+          "name": "LIC-2",
+          "price": 1680448.86,
+          "discount_eur": 186716.5399999998,
+          "discount_pct": 9.99999999999999,
+          "non_price_points": 59.58,
+          "economic_points": 38.911119783256,
+          "total_points": 98.491119783256
+        },
+        {
+          "offer_id": "lic-3",
+          "name": "LIC-3",
+          "price": 1680262.14,
+          "discount_eur": 186903.26,
+          "discount_pct": 10.010000185307634,
+          "non_price_points": 49.13,
+          "economic_points": 38.916856864120795,
+          "total_points": 88.0468568641208
+        },
+        {
+          "offer_id": "lic-4",
+          "name": "LIC-4",
+          "price": 1643105.55,
+          "discount_eur": 224059.84999999986,
+          "discount_pct": 12.000000107114232,
+          "non_price_points": 51.75,
+          "economic_points": 39.667468203024924,
+          "total_points": 91.41746820302492
+        },
+        {
+          "offer_id": "lic-5",
+          "name": "LIC-5",
+          "price": 1503628.3,
+          "discount_eur": 363537.09999999986,
+          "discount_pct": 19.46999981897693,
+          "non_price_points": 56.52,
+          "economic_points": 40.00000000000001,
+          "total_points": 96.52000000000001
+        }
+      ],
+      "note": "Caso real basado en una licitación pública finalizada. Se preservan los datos económicos y resultados; se omiten los elementos identificativos del expediente y de los licitadores."
+    },
+    {
+      "case_id": "case-11",
+      "label": "Caso 11 · SERVICIOS",
+      "contract_type": "SERVICIOS",
+      "tender_price": 3765970.45,
+      "pmax": 45.0,
+      "non_price_max": 55.0,
+      "minimum_offer": 2891512.11,
+      "maximum_discount_pct": 23.220000040095915,
+      "mean_discount_pct": 13.403333307266571,
+      "actual_method_id": "NORMALIZED_PRICE_GAP_POWER",
+      "actual_method_name": "Brecha normalizada potencial",
+      "actual_expression": "P = Pmax * (1 - ((Oi - Omin) / (PL - Omin))^n)",
+      "actual_formula_supported": true,
+      "actual_parameters": {
+        "n": 4.644000008019183
+      },
+      "expected_maximum_discount_pct": 20.0,
+      "best_technical_offer": "LIC-2",
+      "lowest_price_offer": "LIC-6",
+      "actual_awardee": "LIC-6",
+      "offers": [
+        {
+          "offer_id": "lic-1",
+          "name": "LIC-1",
+          "price": 3645459.4,
+          "discount_eur": 120511.05000000028,
+          "discount_pct": 3.199999883164253,
+          "non_price_points": 49.36,
+          "economic_points": 22.397964488566757,
+          "total_points": 71.75796448856676
+        },
+        {
+          "offer_id": "lic-2",
+          "name": "LIC-2",
+          "price": 3502352.52,
+          "discount_eur": 263617.93000000017,
+          "discount_pct": 6.9999999601696326,
+          "non_price_points": 50.75,
+          "economic_points": 36.49597481940293,
+          "total_points": 87.24597481940293
+        },
+        {
+          "offer_id": "lic-3",
+          "name": "LIC-3",
+          "price": 3351713.7,
+          "discount_eur": 414256.75,
+          "discount_pct": 11.00000001327679,
+          "non_price_points": 49.15,
+          "economic_points": 42.716993939458725,
+          "total_points": 91.86699393945872
+        },
+        {
+          "offer_id": "lic-4",
+          "name": "LIC-4",
+          "price": 3088095.77,
+          "discount_eur": 677874.6800000002,
+          "discount_pct": 17.999999973446425,
+          "non_price_points": 47.62,
+          "economic_points": 44.95604480425221,
+          "total_points": 92.5760448042522
+        },
+        {
+          "offer_id": "lic-5",
+          "name": "LIC-5",
+          "price": 3088095.77,
+          "discount_eur": 677874.6800000002,
+          "discount_pct": 17.999999973446425,
+          "non_price_points": 49.74,
+          "economic_points": 44.95604480425221,
+          "total_points": 94.69604480425221
+        },
+        {
+          "offer_id": "lic-6",
+          "name": "LIC-6",
+          "price": 2891512.11,
+          "discount_eur": 874458.3400000003,
+          "discount_pct": 23.220000040095915,
+          "non_price_points": 50.25,
+          "economic_points": 45.0,
+          "total_points": 95.25
+        }
+      ],
+      "note": "Caso real basado en una licitación pública finalizada. Se preservan los datos económicos y resultados; se omiten los elementos identificativos del expediente y de los licitadores."
+    },
+    {
+      "case_id": "case-12",
+      "label": "Caso 12 · SERVICIOS",
+      "contract_type": "SERVICIOS",
+      "tender_price": 5131170.97,
+      "pmax": 50.0,
+      "non_price_max": 50.0,
+      "minimum_offer": 3273687.08,
+      "maximum_discount_pct": 36.199999977782845,
+      "mean_discount_pct": 24.64999999795368,
+      "actual_method_id": "NORMALIZED_PRICE_GAP_POWER",
+      "actual_method_name": "Brecha normalizada potencial",
+      "actual_expression": "P = Pmax * (1 - ((Oi - Omin) / (PL - Omin))^n)",
+      "actual_formula_supported": true,
+      "actual_parameters": {
+        "n": 7.239999995556569
+      },
+      "expected_maximum_discount_pct": 20.0,
+      "best_technical_offer": "LIC-2",
+      "lowest_price_offer": "LIC-5",
+      "actual_awardee": "LIC-4",
+      "offers": [
+        {
+          "offer_id": "lic-1",
+          "name": "LIC-1",
+          "price": 5001865.46,
+          "discount_eur": 129305.50999999978,
+          "discount_pct": 2.520000030324458,
+          "non_price_points": 49.98331,
+          "economic_points": 20.345279813357834,
+          "total_points": 70.32858981335784
+        },
+        {
+          "offer_id": "lic-2",
+          "name": "LIC-2",
+          "price": 3893532.53,
+          "discount_eur": 1237638.44,
+          "discount_pct": 24.120000039679052,
+          "non_price_points": 50.0,
+          "economic_points": 49.98229546413975,
+          "total_points": 99.98229546413975
+        },
+        {
+          "offer_id": "lic-3",
+          "name": "LIC-3",
+          "price": 3659038.02,
+          "discount_eur": 1472132.9499999997,
+          "discount_pct": 28.68999997480107,
+          "non_price_points": 49.97934,
+          "economic_points": 49.999433039107,
+          "total_points": 99.978773039107
+        },
+        {
+          "offer_id": "lic-4",
+          "name": "LIC-4",
+          "price": 3503563.54,
+          "discount_eur": 1627607.4299999997,
+          "discount_pct": 31.71999996718098,
+          "non_price_points": 50.0,
+          "economic_points": 49.99998653604075,
+          "total_points": 99.99998653604075
+        },
+        {
+          "offer_id": "lic-5",
+          "name": "LIC-5",
+          "price": 3273687.08,
+          "discount_eur": 1857483.8899999997,
+          "discount_pct": 36.199999977782845,
+          "non_price_points": 49.99995,
+          "economic_points": 50.0,
+          "total_points": 99.99995
+        }
+      ],
+      "note": "Caso real basado en una licitación pública finalizada. Se preservan los datos económicos y resultados; se omiten los elementos identificativos del expediente y de los licitadores."
+    }
+  ]
+}

@@ -25,6 +25,7 @@ WEB_DIR = Path(__file__).resolve().parents[1] / "web"
 TEMPLATES = Jinja2Templates(directory=str(WEB_DIR / "templates"))
 STATIC_DIR = WEB_DIR / "static"
 MAX_REQUEST_BYTES = 64 * 1024
+ASSET_VERSION = "20260912-cockpit-v1-1"
 
 
 class SecurityHeadersMiddleware:
@@ -56,19 +57,57 @@ def _service(request: Request) -> FormulaPriceComparatorService:
     return request.app.state.formula_service
 
 
-def formula_page(request: Request) -> Response:
+def _page_context(request: Request) -> dict[str, Any]:
     catalog = _service(request).public_catalog()
     catalog["api_url"] = "/api/formula-price-comparator/compare"
     catalog["home_url"] = "/formulas"
+    catalog["analyzer_url"] = "/formulas/analizador"
+    catalog["lab_url"] = "/formulas/laboratorio"
+    return {
+        "request": request,
+        "catalog": catalog,
+        "home_url": catalog["home_url"],
+        "analyzer_url": catalog["analyzer_url"],
+        "lab_url": catalog["lab_url"],
+        "stylesheet_url": f"/static/formula-public.css?v={ASSET_VERSION}",
+        "format_script_url": f"/static/formula-format.js?v={ASSET_VERSION}",
+    }
+
+
+def formula_page(request: Request) -> Response:
+    context = _page_context(request)
+    context.update(
+        {
+            "venn_image_url": f"/static/formula-venn-header.png?v={ASSET_VERSION}",
+            "equations_image_url": f"/static/formula-equations-strip.png?v={ASSET_VERSION}",
+        }
+    )
     return TEMPLATES.TemplateResponse(
         request=request,
-        name="formula_comparator.html",
-        context={
-            "request": request,
-            "catalog": catalog,
-            "stylesheet_url": "/static/formula-comparator.css",
-            "script_url": "/static/formula-comparator.js",
-        },
+        name="formula_public_landing.html",
+        context=context,
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+def formula_analysis_page(request: Request) -> Response:
+    context = _page_context(request)
+    context["script_url"] = f"/static/formula-public-analysis.js?v={ASSET_VERSION}"
+    return TEMPLATES.TemplateResponse(
+        request=request,
+        name="formula_analysis.html",
+        context=context,
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+def formula_lab_page(request: Request) -> Response:
+    context = _page_context(request)
+    context["lab_script_url"] = f"/static/formula-lab.js?v={ASSET_VERSION}"
+    return TEMPLATES.TemplateResponse(
+        request=request,
+        name="formula_lab.html",
+        context=context,
         headers={"Cache-Control": "no-store"},
     )
 
@@ -109,7 +148,7 @@ def health(_: Request) -> Response:
 
 def stylesheet(_: Request) -> Response:
     return FileResponse(
-        STATIC_DIR / "formula-comparator.css",
+        STATIC_DIR / "formula-public.css",
         media_type="text/css",
         headers={"Cache-Control": "public, max-age=3600"},
     )
@@ -117,8 +156,40 @@ def stylesheet(_: Request) -> Response:
 
 def script(_: Request) -> Response:
     return FileResponse(
-        STATIC_DIR / "formula-comparator.js",
+        STATIC_DIR / "formula-public-analysis.js",
         media_type="text/javascript",
+        headers={"Cache-Control": "public, max-age=3600"},
+    )
+
+
+def format_script(_: Request) -> Response:
+    return FileResponse(
+        STATIC_DIR / "formula-format.js",
+        media_type="text/javascript",
+        headers={"Cache-Control": "public, max-age=3600"},
+    )
+
+
+def lab_script(_: Request) -> Response:
+    return FileResponse(
+        STATIC_DIR / "formula-lab.js",
+        media_type="text/javascript",
+        headers={"Cache-Control": "public, max-age=3600"},
+    )
+
+
+def venn_image(_: Request) -> Response:
+    return FileResponse(
+        STATIC_DIR / "formula-venn-header.png",
+        media_type="image/png",
+        headers={"Cache-Control": "public, max-age=3600"},
+    )
+
+
+def equations_image(_: Request) -> Response:
+    return FileResponse(
+        STATIC_DIR / "formula-equations-strip.png",
+        media_type="image/png",
         headers={"Cache-Control": "public, max-age=3600"},
     )
 
@@ -155,9 +226,15 @@ def create_public_app(
         routes=[
             Route("/", formula_page, methods=["GET"]),
             Route("/formulas", formula_page, methods=["GET"]),
+            Route("/formulas/analizador", formula_analysis_page, methods=["GET"]),
+            Route("/formulas/laboratorio", formula_lab_page, methods=["GET"]),
             Route("/api/formula-price-comparator/compare", compare, methods=["POST"]),
-            Route("/static/formula-comparator.css", stylesheet, methods=["GET"]),
-            Route("/static/formula-comparator.js", script, methods=["GET"]),
+            Route("/static/formula-public.css", stylesheet, methods=["GET"]),
+            Route("/static/formula-public-analysis.js", script, methods=["GET"]),
+            Route("/static/formula-format.js", format_script, methods=["GET"]),
+            Route("/static/formula-lab.js", lab_script, methods=["GET"]),
+            Route("/static/formula-venn-header.png", venn_image, methods=["GET"]),
+            Route("/static/formula-equations-strip.png", equations_image, methods=["GET"]),
             Route("/health", health, methods=["GET"]),
         ],
         middleware=[

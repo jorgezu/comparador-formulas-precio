@@ -17,12 +17,18 @@ from cepos.formula_simulation import (
     SIMULATION_VERSION,
 )
 
+from .canonical_catalog import PublicFormulaCanonicalCatalog
 from .public_catalog import PublicFormulaMethodCatalog
+from .public_cases import PublicFormulaCaseCatalog
 
 
 PRODUCT_VERSION = "FORMULA_WEB_PUBLIC_BETA_V1"
 PRODUCT_CONFIG_PATH = Path("config/public_tools/formula_price_comparator_v1.json")
 PUBLIC_CATALOG_PATH = Path(__file__).resolve().parent / "artifacts/formula_public_catalog_v1.json"
+PUBLIC_CASES_PATH = Path(__file__).resolve().parent / "artifacts/formula_public_cases_v1.json"
+CANONICAL_CATALOG_PATH = (
+    Path(__file__).resolve().parent / "artifacts/formula_canonical_catalog_v1.json"
+)
 
 
 PUBLIC_METHODS: dict[str, dict[str, Any]] = {
@@ -35,6 +41,7 @@ PUBLIC_METHODS: dict[str, dict[str, Any]] = {
         ),
         "dependency": "Oferta mínima",
         "behavior": "No lineal, convexa respecto de la baja",
+        "reference_type": "Relativa",
     },
     "LINEAR_DISCOUNT_MAX": {
         "name": "Lineal respecto de la baja máxima",
@@ -45,6 +52,7 @@ PUBLIC_METHODS: dict[str, dict[str, Any]] = {
         ),
         "dependency": "Baja máxima",
         "behavior": "Lineal",
+        "reference_type": "Relativa",
     },
     "AFFINE_MIN_REFERENCE_OVER_TENDER_PRICE": {
         "name": "Lineal referenciada a la oferta mínima",
@@ -55,6 +63,7 @@ PUBLIC_METHODS: dict[str, dict[str, Any]] = {
         ),
         "dependency": "Oferta mínima",
         "behavior": "Lineal",
+        "reference_type": "Relativa",
     },
     "NORMALIZED_PRICE_GAP_POWER": {
         "name": "Brecha normalizada potencial",
@@ -65,6 +74,7 @@ PUBLIC_METHODS: dict[str, dict[str, Any]] = {
         ),
         "dependency": "Oferta mínima",
         "behavior": "Paramétrico; cóncavo respecto de la baja cuando n > 1",
+        "reference_type": "Relativa",
     },
     "DISCOUNT_MAX_POWER": {
         "name": "Potencia sobre la baja máxima",
@@ -75,6 +85,7 @@ PUBLIC_METHODS: dict[str, dict[str, Any]] = {
         ),
         "dependency": "Baja máxima",
         "behavior": "Potencial, cóncavo con la raíz sexta documentada",
+        "reference_type": "Relativa",
     },
     "EXPONENTIAL_SATURATING_DISCOUNT": {
         "name": "Exponencial saturante",
@@ -85,6 +96,7 @@ PUBLIC_METHODS: dict[str, dict[str, Any]] = {
         ),
         "dependency": "No; usa cada oferta y parámetros fijos",
         "behavior": "No lineal, cóncava y saturante",
+        "reference_type": "Absoluta",
     },
     "DISCOUNT_THRESHOLD_TWO_SEGMENTS": {
         "name": "Lineal por tramos",
@@ -95,6 +107,7 @@ PUBLIC_METHODS: dict[str, dict[str, Any]] = {
         ),
         "dependency": "Baja máxima",
         "behavior": "Lineal por tramos",
+        "reference_type": "Mixta",
     },
 }
 
@@ -107,7 +120,7 @@ PARAMETER_FIELDS: dict[str, tuple[dict[str, Any], ...]] = {
         {"name": "n", "label": "Exponente n", "min": 0.01, "max": 100.0, "step": 0.01},
     ),
     "EXPONENTIAL_SATURATING_DISCOUNT": (
-        {"name": "k", "label": "Coeficiente k", "min": 0.001, "max": 10.0, "step": 0.01},
+        {"name": "k", "label": "Coeficiente k", "min": 0.001, "max": 10.0, "step": 0.001},
     ),
     "DISCOUNT_THRESHOLD_TWO_SEGMENTS": (
         {"name": "first_slope", "label": "Pendiente inicial", "min": 0.01, "max": 100.0, "step": 0.1},
@@ -141,11 +154,26 @@ class FormulaPriceComparatorService:
         self.root = root.resolve()
         self.config = dict(config)
         self.catalog = catalog
+        self.case_catalog = PublicFormulaCaseCatalog(PUBLIC_CASES_PATH)
+        canonical = PublicFormulaCanonicalCatalog(CANONICAL_CATALOG_PATH).methods()
         self.simulation_engine = FormulaSimulationEngine()
         self.comparison_engine = FormulaComparisonEngine(self.simulation_engine)
         self.methods = {item.method_id: item for item in self.catalog.confirmed_methods()}
-        if set(self.methods) != set(PUBLIC_METHODS):
+        if set(self.methods) != set(PUBLIC_METHODS) or set(self.methods) != set(canonical):
             raise ValueError("The public formula catalog does not match the seven confirmed methods")
+        for method_id, method in self.methods.items():
+            if canonical[method_id]["implementation_expression"] != method.expression:
+                raise ValueError(
+                    f"Canonical equation differs from validated method: {method_id}"
+                )
+        self.public_methods = {
+            method_id: {
+                **PUBLIC_METHODS[method_id],
+                **canonical[method_id],
+                "name": canonical[method_id]["public_name"],
+            }
+            for method_id in self.methods
+        }
         self.variant_definitions = {
             method_id: self._build_variants(method)
             for method_id, method in self.methods.items()
@@ -170,7 +198,7 @@ class FormulaPriceComparatorService:
         default_methods = set(self.config.get("default_methods", ()))
         methods = []
         for method_id, method in self.methods.items():
-            public = PUBLIC_METHODS[method_id]
+            public = self.public_methods[method_id]
             variants = self.variant_definitions[method_id]
             default_variant_id = next(
                 variant_id
@@ -184,9 +212,17 @@ class FormulaPriceComparatorService:
                     "short_name": public["short_name"],
                     "description": public["description"],
                     "expression": method.expression,
+                    "equation_plain": public["equation_plain"],
+                    "equation_mathml": public["equation_mathml"],
                     "depends_on_other_offers": bool(method.set_dependencies),
                     "dependency": public["dependency"],
                     "behavior": public["behavior"],
+                    "reference_type": public["reference_type"],
+                    "particularities": list(public["particularities"]),
+                    "zero_discount_behavior": public["zero_discount_behavior"],
+                    "verified_equivalences": list(public["verified_equivalences"]),
+                    "source_alignment": list(public["source_alignment"]),
+                    "discrepancies": list(public["discrepancies"]),
                     "default_selected": method_id in default_methods,
                     "default_variant_id": default_variant_id,
                     "variants": [
@@ -204,6 +240,7 @@ class FormulaPriceComparatorService:
         return {
             "product_version": PRODUCT_VERSION,
             "engine_version": SIMULATION_VERSION,
+            "canonical_catalog_version": "FORMULA_CANONICAL_CATALOG_V1",
             "title": str(self.config["title"]),
             "feedback_url": self._configured_url("FORMULA_FEEDBACK_URL", "feedback_url"),
             "author": {
@@ -217,6 +254,7 @@ class FormulaPriceComparatorService:
             },
             "max_offers": int(self.config.get("max_offers", 20)),
             "demo": self.config["demo"],
+            "cases": self.case_catalog.cases(),
             "methods": methods,
         }
 
@@ -473,13 +511,15 @@ class FormulaPriceComparatorService:
         simulation: Any,
         metric: Mapping[str, Any],
     ) -> dict[str, Any]:
-        public = PUBLIC_METHODS[method_id]
+        public = self.public_methods[method_id]
         return {
             "method_id": method_id,
             "name": public["name"],
             "short_name": public["short_name"],
             "description": public["description"],
             "expression": definition.expression,
+            "equation_plain": public["equation_plain"],
+            "equation_mathml": public["equation_mathml"],
             "parameters": dict(definition.parameters),
             "parameter_origin": variant["origin"],
             "variant_label": (
@@ -490,6 +530,7 @@ class FormulaPriceComparatorService:
             "depends_on_other_offers": bool(definition.set_dependencies),
             "dependency": public["dependency"],
             "behavior": public["behavior"],
+            "reference_type": public["reference_type"],
             "effective_score_range": float(metric["effective_score_range"]),
             "effective_range_ratio": float(metric["effective_range_ratio"]),
             "score_stddev": float(metric["score_stddev"]),
@@ -558,7 +599,7 @@ class FormulaPriceComparatorService:
             curves.append(
                 {
                     "method_id": method_id,
-                    "name": PUBLIC_METHODS[method_id]["short_name"],
+                    "name": self.public_methods[method_id]["short_name"],
                     "points": [
                         {
                             "price": row.price,
@@ -634,7 +675,7 @@ class FormulaPriceComparatorService:
             result.append(
                 {
                     "method_id": method_id,
-                    "name": PUBLIC_METHODS[method_id]["name"],
+                    "name": self.public_methods[method_id]["name"],
                     "series": series,
                 }
             )
@@ -677,7 +718,7 @@ class FormulaPriceComparatorService:
             impacts.append(
                 {
                     "method_id": method_id,
-                    "name": PUBLIC_METHODS[method_id]["short_name"],
+                    "name": self.public_methods[method_id]["short_name"],
                     "depends_on_other_offers": bool(definition.set_dependencies),
                     "changed_offer_count": sum(abs(item["delta"]) > 1e-9 for item in changes),
                     "unchanged_price_changed_count": sum(

@@ -1,0 +1,134 @@
+{
+  "schema_version": "formula_public_bundle_v1",
+  "product_version": "FORMULA_WEB_PUBLIC_BETA_V1",
+  "files": [
+    {
+      "path": ".dockerignore",
+      "sha256": "3ed903dd52a3fff339f33bae23c3d8b43d23e54e8f25030690677707b36a2ce6"
+    },
+    {
+      "path": "Dockerfile.public",
+      "sha256": "2e27efa954be373b18c79f09ec5491bba2156fee57d359c97006eea3cf163651"
+    },
+    {
+      "path": "config/public_tools/formula_price_comparator_v1.json",
+      "sha256": "0ecc9685026ca8e3d6a22edc4bbafdfa2b4ab7c3d51717e996335436dee12261"
+    },
+    {
+      "path": "render.yaml",
+      "sha256": "c9e1b08bbe0b3a8170b630487c96694e274b5d2bbcd2ffdbd8b1d1b87149a6f1"
+    },
+    {
+      "path": "requirements-public.txt",
+      "sha256": "df45ecebad53778b91df9e306f05dc8371b4ed8928e69aa60aa2deb6e4f44d6e"
+    },
+    {
+      "path": "src/cepos/__init__.py",
+      "sha256": "c4d17f98d09a28637a8b02184c38687d9aab0bc718a11ac3aaf1896c13c3d8ff"
+    },
+    {
+      "path": "src/cepos/formula_simulation/__init__.py",
+      "sha256": "1423c0e27e578e063ae793050a2ea22f7da2d10ff82620fbebba6df3c2f56ea3"
+    },
+    {
+      "path": "src/cepos/formula_simulation/comparison.py",
+      "sha256": "8fcaec0d6f9af34ca46c7a2fe0588b323de4b421164af5c8dcde3c1aa45322bb"
+    },
+    {
+      "path": "src/cepos/formula_simulation/engine.py",
+      "sha256": "66a84c46300a30e801e0a76178f23e10b150c90f287d7e4c6cb8cde6b2991887"
+    },
+    {
+      "path": "src/cepos/formula_simulation/models.py",
+      "sha256": "367f9b02c0bb862b7b151756a4e9fa69116fc185f232ba84fe486287fa1c1ef6"
+    },
+    {
+      "path": "src/cepos/formula_web/__init__.py",
+      "sha256": "f0dda8cb21b653930f3cfe601c4561c263d82195a13e53c6c1ea2369000f514e"
+    },
+    {
+      "path": "src/cepos/formula_web/artifacts/formula_canonical_catalog_v1.json",
+      "sha256": "431ec5ee8bb6e3bf192a20898bfa1cbd04e8ed8f3c68f2663f89f00eec994d35"
+    },
+    {
+      "path": "src/cepos/formula_web/artifacts/formula_public_cases_v1.json",
+      "sha256": "53b3c39ba1378bae410f9f52d7d42334bc77954b0244cc581054da508cb29ca6"
+    },
+    {
+      "path": "src/cepos/formula_web/artifacts/formula_public_catalog_v1.json",
+      "sha256": "0fe08905aad71b569444d21b35139eb34b61ed559564d267795433952eae8400"
+    },
+    {
+      "path": "src/cepos/formula_web/canonical_catalog.py",
+      "sha256": "0c8c0053ebc1ed8af4f501866f44fb66d269bb9cf7c9440dd238185724b829a2"
+    },
+    {
+      "path": "src/cepos/formula_web/public_app.py",
+      "sha256": "8cdc95575447db30fd695e8a4b012f4d20c1de2721143bf5dbd424f144120048"
+    },
+    {
+      "path": "src/cepos/formula_web/public_cases.py",
+      "sha256": "f0e135ca24827df0204b87d444eebfa83556a8b1f004e6e72f990878ff28de97"
+    },
+    {
+      "path": "src/cepos/formula_web/public_catalog.py",
+      "sha256": "2bcd02407c0c060ad38b22ae84b145819ce5904eb3fec85e89c8f6222b544547"
+    },
+    {
+      "path": "src/cepos/formula_web/server.py",
+      "sha256": "363aec955f97351639b1171475f37039d2ed8045f84653b0146b121f524d49bc"
+    },
+    {
+      "path": "src/cepos/formula_web/service.py",
+      "sha256": "0f506237b0385af7b222c144a56bcfc84c7c213dc56a81b28f511b917aef99c4"
+    },
+    {
+      "path": "src/cepos/web/static/formula-comparator.css",
+      "sha256": "bfd48a104b2c0ba1b11f6e3d1c253c46f39351b92cd425f429fc94b4a1602583"
+    },
+    {
+      "path": "src/cepos/web/static/formula-comparator.js",
+      "sha256": "2405385d8d8b2a06bc2033fc3304cd8db0337ea7c9531a5822886ab7db7abe62"
+    },
+    {
+      "path": "src/cepos/web/static/formula-equations-strip.png",
+      "sha256": "e85fdb47c33148e597a206965679db531b91286fee8bd12bb2d84ec829f083e8"
+    },
+    {
+      "path": "src/cepos/web/static/formula-format.js",
+      "sha256": "501bce906f047dbb286756ddd32ec68b39cba5074f23afd837b694a7d5d7782b"
+    },
+    {
+      "path": "src/cepos/web/static/formula-lab.js",
+      "sha256": "a1d82ce2cf473341ff6c3a709db524e031a05c956314e9666ef75a80bad58db5"
+    },
+    {
+      "path": "src/cepos/web/static/formula-public-analysis.js",
+      "sha256": "dd0d869f8961cfb06a57d282daa3886e11e64b13492218e4dbc9beee2d8025e0"
+    },
+    {
+      "path": "src/cepos/web/static/formula-public.css",
+      "sha256": "1d9456668699df90876b57447d41990065793f5f39e372debd9161888ff61c3a"
+    },
+    {
+      "path": "src/cepos/web/static/formula-venn-header.png",
+      "sha256": "9be315c0e7515e5f9c423c0850587c838f1ae65b68fc7e097f6d65491092d791"
+    },
+    {
+      "path": "src/cepos/web/templates/formula_analysis.html",
+      "sha256": "e4913346f24b1c0edfbf3874dc0a14430f4da61f4a55840b028f8c9689048816"
+    },
+    {
+      "path": "src/cepos/web/templates/formula_comparator.html",
+      "sha256": "a6af0aa372b17ef2f4135601597306b28679279a07c34e6aad9fd0b739c54020"
+    },
+    {
+      "path": "src/cepos/web/templates/formula_lab.html",
+      "sha256": "c14a51e1a45e1864f3765c9068fffab2daa7fbc7b8fadf7eda8e4e07ab12a811"
+    },
+    {
+      "path": "src/cepos/web/templates/formula_public_landing.html",
+      "sha256": "9cc6b820df1e58b2e9f8b5d6f559ca9aae1a0080e82b03b738d0f4b789ea280b"
+    }
+  ]
+}
