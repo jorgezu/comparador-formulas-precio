@@ -549,6 +549,9 @@ select:focus, input:focus, button:focus-visible, a:focus-visible, summary:focus-
 .fp-feedback-band h2 { margin: 3px 0 0; font-family: Georgia, "Times New Roman", serif; font-size: 24px; font-weight: 500; }
 .fp-feedback-band p:not(.fp-kicker) { max-width: 720px; margin: 6px 0 0; color: var(--fp-muted); font-size: 13px; }
 .fp-feedback-band-quiet { padding-block: 16px; }
+.fp-landing-why { max-width: 820px; margin: 28px 0 38px; padding-top: 18px; border-top: 1px solid var(--fp-line); }
+.fp-landing-why h2 { margin: 0 0 7px; font-family: Georgia, "Times New Roman", serif; font-size: 20px; font-weight: 500; }
+.fp-landing-why p { margin: 0; color: var(--fp-muted); font-size: 13px; line-height: 1.65; }
 .fp-cta-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
 .fp-formula-reference { margin-top: 26px; padding-top: 28px; border-top: 1px solid var(--fp-line); }
 .fp-formula-reference > div:first-child { max-width: 870px; }

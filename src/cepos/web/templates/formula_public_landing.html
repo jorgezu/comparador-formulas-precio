@@ -67,6 +67,10 @@
       </div>
     </section>
     {% if catalog.feedback_url %}<section class="fp-feedback-band fp-feedback-band-quiet"><div><p class="fp-kicker">{{ copy.landing.feedback_kicker }}</p><p>{{ copy.landing.feedback_body }}</p></div><a class="fp-text-link" href="{{ catalog.feedback_urls.feedback }}" rel="noopener noreferrer">{{ copy.landing.feedback_cta }}</a></section>{% endif %}
+    <section class="fp-landing-why" aria-labelledby="landing-why-title">
+      <h2 id="landing-why-title">{{ copy.landing.why_title }}</h2>
+      <p>{{ copy.landing.why_text }}</p>
+    </section>
   </main>
 
   <footer class="fp-footer">

@@ -3,6 +3,16 @@
 from __future__ import annotations
 
 
+LANDING_WHY_TITLE = "¿Por qué TenderLab?"
+
+LANDING_WHY_TEXT = (
+    "Porque asignar 20, 30 o 40 puntos al precio no determina cómo se repartirán realmente. "
+    "La fórmula elegida y las ofertas que finalmente se presenten pueden comprimir o amplificar "
+    "las diferencias económicas y alterar el equilibrio entre precio y calidad. "
+    "TenderLab nace para hacer visible ese efecto antes y después de abrir las ofertas."
+)
+
+
 PUBLIC_COPY = {
     "common": {
         "back_home_aria": "Volver al inicio",
@@ -12,13 +22,13 @@ PUBLIC_COPY = {
         "release_label": "Versión beta",
     },
     "landing": {
-        "meta_description": "Comprende cómo la fórmula económica modifica el resultado de una licitación pública.",
+        "meta_description": "Comprende cómo la fórmula económica afecta el resultado de una licitación pública.",
         "home_aria": "Inicio del proyecto Fórmulas de Valoración",
-        "product_name": "Fórmulas de Valoración",
+        "product_name": "SIMULADOR de Fórmulas de Valoración de las Ofertas Ecnonómicas",
         "product_subtitle": "Licitación pública",
         "kicker": "Proyecto Fórmulas de Valoración",
         "title": "La importancia de la fórmula económica en la licitación pública",
-        "subtitle": "Asignar 40 puntos al precio no asegura que realmente discriminen 40; la fórmula, las ofertas y las bajas extremas pueden cambiar radicalmente el resultado de una licitación.",
+        "subtitle": "Una baja extrema puede alterar la voluntad de la fórmula y desvirtuar el objetivo de la licitación: seleccionar la oferta con mejor relación calidad/precio. TenderLab permite comparar fórmulas, confrontar teoría y realidad y simular su efecto sobre la adjudicación.",
         "context_link": "¿Por qué ocurre esto? Entender las fórmulas de precio",
         "venn_alt": "Diagrama de equilibrio entre calidad, fiabilidad y buen precio",
         "profiles_aria": "Elegir perfil de análisis",
@@ -47,6 +57,8 @@ PUBLIC_COPY = {
         "feedback_kicker": "Conversación abierta",
         "feedback_body": "Las observaciones profesionales ayudan a contrastar y mejorar la herramienta.",
         "feedback_cta": "Opinar, proponer un caso o contactar",
+        "why_title": LANDING_WHY_TITLE,
+        "why_text": LANDING_WHY_TEXT,
         "footer_legal": "Herramienta de análisis matemático. No sustituye el análisis jurídico de un expediente concreto.",
         "footer_author": "Desarrollado por Jorge Cejudo Podio",
     },
@@ -134,11 +146,11 @@ PUBLIC_COPY = {
         "intro_kicker": "Teoría antes del caso",
         "intro_title": "Comprender cómo reparte puntos cada fórmula",
         "intro_body": "La curva que se estudia antes de recibir ofertas parte de una hipótesis. Cuando la fórmula depende del conjunto, las referencias observadas pueden producir una curva efectiva diferente.",
-        "relative_title": "Relativas",
+        "relative_title": "Fórmulas Relativas",
         "relative_body": "La curva depende de la oferta mínima, la baja máxima u otros datos del conjunto.",
-        "absolute_title": "Absolutas",
+        "absolute_title": "Fórmulas Absolutas",
         "absolute_body": "Una misma baja mantiene su posición con parámetros fijos.",
-        "threshold_title": "Umbrales",
+        "threshold_title": "Fórmulas con Umbrales",
         "threshold_body": "La pendiente cambia a partir de una baja definida.",
         "particular_cases_aria": "Casos particulares entre fórmulas",
         "workspace_aria": "Laboratorio interactivo",
@@ -177,7 +189,7 @@ PUBLIC_COPY = {
         "catalog_body": "Nombres públicos, ecuaciones y propiedades contrastados con la implementación actual. Las discrepancias se conservan como asuntos de validación, no se corrigen por intuición.",
         "feedback_kicker": "Participar",
         "feedback_title": "¿Conoces otra fórmula? Proponla",
-        "feedback_body": "Seguimos probando nuevas fórmulas y variantes, tanto propias como utilizadas en otras licitaciones.",
+        "feedback_body": "Seguimos probando nuevas fórmulas y variantes, tanto utilizadas en otras licitaciones como inventadas.",
         "feedback_discrepancy_cta": "¿Has detectado una discrepancia? Cuéntanoslo",
         "feedback_formula_cta": "Proponer una fórmula",
         "footer": "Las curvas del laboratorio se calculan con el mismo backend validado que los casos reales.",
@@ -260,4 +272,3 @@ PUBLIC_COPY = {
         },
     },
 }
-
