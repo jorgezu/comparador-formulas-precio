@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
-  <meta name="description" content="Analizador de casos reales de fórmulas de valoración económica.">
-  <title>Analizador de casos reales · {{ catalog.title }}</title>
+  <meta name="description" content="{{ copy.analysis.meta_description }}">
+  <title>{{ copy.analysis.page_title }} · {{ catalog.title }}</title>
   <link rel="stylesheet" href="{{ stylesheet_url }}">
   <script id="formula-catalog" type="application/json">{{ catalog | tojson }}</script>
   <script defer src="{{ format_script_url }}"></script>
@@ -13,75 +13,75 @@
 </head>
 <body class="fp-body fp-analysis-page">
   <header class="fp-topbar">
-    <a class="fp-product" href="{{ home_url }}" aria-label="Volver al inicio">
+    <a class="fp-product" href="{{ home_url }}" aria-label="{{ copy.common.back_home_aria }}">
       <span class="fp-product-mark" aria-hidden="true">f(x)</span>
-      <span><strong>Analizador de casos reales</strong><small>Fórmulas de Valoración</small></span>
+      <span><strong>{{ copy.analysis.product_name }}</strong><small>{{ copy.analysis.product_subtitle }}</small></span>
     </a>
-    <nav class="fp-nav" aria-label="Navegación principal">
-      <a aria-current="page" href="{{ analyzer_url }}">Analizador</a>
-      <a href="{{ lab_url }}">Laboratorio</a>
+    <nav class="fp-nav" aria-label="{{ copy.common.navigation_aria }}">
+      <a aria-current="page" href="{{ analyzer_url }}">{{ copy.common.nav_analyzer }}</a>
+      <a href="{{ lab_url }}">{{ copy.common.nav_lab }}</a>
     </nav>
   </header>
 
   <main class="fp-analysis-shell" id="formula-workspace">
-    <section class="fp-case-strip" aria-label="Datos principales del caso">
+    <section class="fp-case-strip" aria-label="{{ copy.analysis.case_strip_aria }}">
       <div class="fp-case-selector-group">
-        <label for="case-selector">Caso real</label>
+        <label for="case-selector">{{ copy.analysis.case_label }}</label>
         <select id="case-selector"></select>
       </div>
       <div class="fp-profile-control">
-        <span>Perfil</span>
-        <div class="fp-segmented" id="profile-selector" role="group" aria-label="Perfil de análisis">
-          <button type="button" data-profile="administracion" aria-pressed="true">Administración</button>
-          <button type="button" data-profile="empresa" aria-pressed="false">Empresa</button>
+        <span>{{ copy.analysis.profile_label }}</span>
+        <div class="fp-segmented" id="profile-selector" role="group" aria-label="{{ copy.analysis.profile_aria }}">
+          <button type="button" data-profile="administracion" aria-pressed="true">{{ copy.analysis.profile_administration }}</button>
+          <button type="button" data-profile="empresa" aria-pressed="false">{{ copy.analysis.profile_company }}</button>
         </div>
       </div>
       <div class="fp-case-strip-facts" id="case-strip-facts"></div>
-      <button class="fp-button fp-button-outline" id="restore-case" type="button">Restaurar caso real</button>
+      <button class="fp-button fp-button-outline" id="restore-case" type="button">{{ copy.analysis.restore_case }}</button>
     </section>
 
     <p class="fp-case-note" id="case-note"></p>
 
-    <section class="fp-cockpit" aria-label="Puesto de análisis del caso">
-      <aside class="fp-control-column" aria-label="Controles de simulación">
+    <section class="fp-cockpit" aria-label="{{ copy.analysis.workspace_aria }}">
+      <aside class="fp-control-column" aria-label="{{ copy.analysis.controls_aria }}">
         <div class="fp-control-intro">
-          <p class="fp-kicker">Cambiar y observar</p>
-          <h1 id="case-title">Cargando caso…</h1>
+          <p class="fp-kicker">{{ copy.analysis.controls_kicker }}</p>
+          <h1 id="case-title">{{ copy.analysis.loading_case }}</h1>
           <p id="scenario-guidance"></p>
-          <div class="fp-status" id="result-status" role="status" aria-live="polite">Calculando…</div>
+          <div class="fp-status" id="result-status" role="status" aria-live="polite">{{ copy.analysis.calculating }}</div>
         </div>
 
         <details class="fp-control-section" open>
-          <summary>Fórmulas visibles <span id="method-count"></span></summary>
+          <summary>{{ copy.analysis.visible_formulas }} <span id="method-count"></span></summary>
           <div class="fp-method-list" id="method-list"></div>
         </details>
 
         <details class="fp-control-section" open>
-          <summary>Parámetros</summary>
+          <summary>{{ copy.analysis.parameters }}</summary>
           <div class="fp-bmax-control">
-            <label for="expected-bmax"><span>Baja máxima esperada</span><strong id="expected-bmax-value">—</strong></label>
-            <div><input id="expected-bmax" type="range" min="5" max="95" step="5"><input id="expected-bmax-number" type="number" min="0.01" max="99.99" step="5" inputmode="decimal" aria-label="Baja máxima esperada (valor)"></div>
-            <p>Hipótesis de trabajo, no dato real.</p>
+            <label for="expected-bmax"><span>{{ copy.analysis.expected_bmax }}</span><strong id="expected-bmax-value">—</strong></label>
+            <div><input id="expected-bmax" type="range" min="5" max="95" step="5"><input id="expected-bmax-number" type="number" min="0.01" max="99.99" step="5" inputmode="decimal" aria-label="{{ copy.analysis.expected_bmax_value_aria }}"></div>
+            <p>{{ copy.analysis.expected_bmax_help }}</p>
             <p id="bmax-inline-comparison"></p>
           </div>
           <div class="fp-parameter-list" id="parameter-list"></div>
         </details>
 
         <details class="fp-control-section">
-          <summary>Ofertas <span id="offer-count"></span></summary>
+          <summary>{{ copy.analysis.offers }} <span id="offer-count"></span></summary>
           <div class="fp-field-grid fp-compact-fields">
-            <label class="fp-field"><span>Precio de licitación</span><input id="tender-price" type="number" inputmode="decimal" min="0.01" step="1000"></label>
-            <label class="fp-field"><span>Puntos precio</span><input id="pmax" type="number" inputmode="decimal" min="0.01" step="1"></label>
+            <label class="fp-field"><span>{{ copy.analysis.tender_price }}</span><input id="tender-price" type="number" inputmode="decimal" min="0.01" step="1000"></label>
+            <label class="fp-field"><span>{{ copy.analysis.price_points }}</span><input id="pmax" type="number" inputmode="decimal" min="0.01" step="1"></label>
           </div>
           <div class="fp-offer-list" id="offer-list"></div>
-          <button class="fp-button fp-button-outline fp-full-button" id="add-offer" type="button">Añadir oferta</button>
+          <button class="fp-button fp-button-outline fp-full-button" id="add-offer" type="button">{{ copy.analysis.add_offer }}</button>
         </details>
 
         <details class="fp-control-section">
-          <summary>¿Qué pasa si…?</summary>
+          <summary>{{ copy.analysis.what_if }}</summary>
           <div class="fp-what-if-actions">
-            <button class="fp-button fp-button-outline" id="add-extreme" type="button">Añadir una baja extrema</button>
-            <button class="fp-button fp-button-quiet" id="restore-case-secondary" type="button">Deshacer simulación</button>
+            <button class="fp-button fp-button-outline" id="add-extreme" type="button">{{ copy.analysis.add_extreme }}</button>
+            <button class="fp-button fp-button-quiet" id="restore-case-secondary" type="button">{{ copy.analysis.undo_simulation }}</button>
           </div>
           <p id="impact-summary" class="fp-small-copy"></p>
         </details>
@@ -90,41 +90,41 @@
       <section class="fp-chart-column" aria-labelledby="chart-title">
         <div class="fp-panel-heading">
           <div>
-            <p class="fp-kicker">Curvas y ofertas reales</p>
-            <h2 id="chart-title">Puntos obtenidos según la baja</h2>
+            <p class="fp-kicker">{{ copy.analysis.chart_kicker }}</p>
+            <h2 id="chart-title">{{ copy.analysis.chart_title }}</h2>
           </div>
-          <a class="fp-text-link" id="understand-formula-link" href="{{ lab_url }}">Entender esta fórmula</a>
+          <a class="fp-text-link" id="understand-formula-link" href="{{ lab_url }}">{{ copy.analysis.understand_formula }}</a>
         </div>
         <div class="fp-curve-toolbar">
           <div id="bmax-summary" class="fp-bmax-summary" aria-live="polite"></div>
-          <label class="fp-check-control"><input id="show-resulting-curve" type="checkbox"> <span>Mostrar curva resultante</span></label>
+          <label class="fp-check-control"><input id="show-resulting-curve" type="checkbox"> <span>{{ copy.analysis.show_resulting_curve }}</span></label>
         </div>
         <div class="fp-chart-wrap">
           <svg id="result-chart" viewBox="0 0 920 500" role="img" aria-labelledby="chart-svg-title chart-svg-desc">
-            <title id="chart-svg-title">Curvas de puntuación y ofertas del caso</title>
-            <desc id="chart-svg-desc">El eje horizontal representa la baja porcentual y el vertical los puntos del criterio precio.</desc>
+            <title id="chart-svg-title">{{ copy.analysis.chart_svg_title }}</title>
+            <desc id="chart-svg-desc">{{ copy.analysis.chart_svg_description }}</desc>
           </svg>
         </div>
-        <div class="fp-chart-legend" id="chart-legend" aria-label="Fórmulas activas"></div>
-        <div class="fp-chart-offers" id="chart-offers" aria-label="Ofertas representadas"></div>
-        <div class="fp-selected-offer" id="selected-offer" aria-live="polite">Selecciona un punto LIC-n para fijar sus datos.</div>
+        <div class="fp-chart-legend" id="chart-legend" aria-label="{{ copy.analysis.active_formulas_aria }}"></div>
+        <div class="fp-chart-offers" id="chart-offers" aria-label="{{ copy.analysis.represented_offers_aria }}"></div>
+        <div class="fp-selected-offer" id="selected-offer" aria-live="polite">{{ copy.analysis.selected_offer_help }}</div>
       </section>
 
-      <aside class="fp-result-column" aria-label="Resultados principales">
+      <aside class="fp-result-column" aria-label="{{ copy.analysis.results_aria }}">
         <div class="fp-result-heading">
-          <p class="fp-kicker">Resultado actual</p>
-          <label for="ranking-formula">Clasificar con</label>
+          <p class="fp-kicker">{{ copy.analysis.results_kicker }}</p>
+          <label for="ranking-formula">{{ copy.analysis.rank_with }}</label>
           <select id="ranking-formula"></select>
         </div>
-        <div class="fp-winner-current"><span>Ganador simulado</span><strong id="simulated-winner">—</strong><small id="winner-formula-label"></small></div>
+        <div class="fp-winner-current"><span>{{ copy.analysis.simulated_winner }}</span><strong id="simulated-winner">—</strong><small id="winner-formula-label"></small></div>
         <div class="fp-baseline-compare" id="baseline-compare"></div>
         <div class="fp-result-identities">
-          <div><span>Mejor técnicamente</span><strong id="technical-best">—</strong></div>
-          <div><span>Oferta más económica</span><strong id="cheapest-offer">—</strong></div>
+          <div><span>{{ copy.analysis.technical_best }}</span><strong id="technical-best">—</strong></div>
+          <div><span>{{ copy.analysis.cheapest_offer }}</span><strong id="cheapest-offer">—</strong></div>
         </div>
-        <div class="fp-segmented fp-ranking-switch" role="group" aria-label="Tipo de clasificación">
-          <button type="button" class="is-active" data-ranking="price" aria-pressed="true">Sólo precio</button>
-          <button type="button" data-ranking="total" aria-pressed="false">Puntuación total</button>
+        <div class="fp-segmented fp-ranking-switch" role="group" aria-label="{{ copy.analysis.ranking_aria }}">
+          <button type="button" class="is-active" data-ranking="price" aria-pressed="true">{{ copy.analysis.ranking_price }}</button>
+          <button type="button" data-ranking="total" aria-pressed="false">{{ copy.analysis.ranking_total }}</button>
         </div>
         <ol class="fp-ranking-list" id="ranking-list"></ol>
         <div class="fp-score-spread" id="score-spread"></div>
@@ -132,29 +132,29 @@
     </section>
 
     <section class="fp-data-section" aria-labelledby="data-title">
-      <div class="fp-section-heading"><div><p class="fp-kicker">Detalle verificable</p><h2 id="data-title">Datos del caso</h2></div></div>
-      <div class="fp-table-scroll"><table class="fp-results-table"><thead><tr><th>Oferta</th><th>Importe</th><th>Baja €</th><th>Baja %</th><th>Puntos NO precio</th><th>Estado</th></tr></thead><tbody id="case-data-body"></tbody></table></div>
+      <div class="fp-section-heading"><div><p class="fp-kicker">{{ copy.analysis.data_kicker }}</p><h2 id="data-title">{{ copy.analysis.data_title }}</h2></div></div>
+      <div class="fp-table-scroll"><table class="fp-results-table"><thead><tr><th>{{ copy.analysis.table_offer }}</th><th>{{ copy.analysis.table_amount }}</th><th>{{ copy.analysis.table_discount_euro }}</th><th>{{ copy.analysis.table_discount_percent }}</th><th>{{ copy.analysis.table_non_price }}</th><th>{{ copy.analysis.table_status }}</th></tr></thead><tbody id="case-data-body"></tbody></table></div>
     </section>
 
     <section class="fp-data-section" aria-labelledby="scores-title">
-      <div class="fp-section-heading"><div><p class="fp-kicker">Comparación</p><h2 id="scores-title">Puntuación por fórmula</h2></div><span class="fp-table-note" id="precision-note"></span></div>
+      <div class="fp-section-heading"><div><p class="fp-kicker">{{ copy.analysis.scores_kicker }}</p><h2 id="scores-title">{{ copy.analysis.scores_title }}</h2></div><span class="fp-table-note" id="precision-note"></span></div>
       <div class="fp-table-scroll"><table class="fp-results-table"><thead id="scores-head"></thead><tbody id="scores-body"></tbody></table></div>
     </section>
 
     <section class="fp-conclusions" aria-labelledby="conclusions-title">
-      <div><p class="fp-kicker">Lectura del resultado</p><h2 id="conclusions-title">Qué muestra este caso</h2></div>
+      <div><p class="fp-kicker">{{ copy.analysis.conclusions_kicker }}</p><h2 id="conclusions-title">{{ copy.analysis.conclusions_title }}</h2></div>
       <ul id="conclusion-list"></ul>
     </section>
 
     {% if catalog.feedback_url %}<section class="fp-commercial-cta">
-      <div><p class="fp-kicker">Análisis profesional</p><h2 id="commercial-cta-title">¿Quieres analizar tu propia licitación?</h2><p id="commercial-cta-copy"></p></div>
+      <div><p class="fp-kicker">{{ copy.analysis.commercial_kicker }}</p><h2 id="commercial-cta-title">{{ copy.analysis.profiles.administracion.commercial_title }}</h2><p id="commercial-cta-copy"></p></div>
       <div class="fp-cta-actions">
-        <a class="fp-button fp-button-primary" href="{{ catalog.feedback_urls.analisis }}" rel="noopener noreferrer">Solicitar un análisis</a>
-        <a class="fp-button fp-button-outline" href="{{ catalog.feedback_urls.caso }}" rel="noopener noreferrer">Proponer un caso real</a>
+        <a class="fp-button fp-button-primary" href="{{ catalog.feedback_urls.analisis }}" rel="noopener noreferrer">{{ copy.analysis.commercial_analysis_cta }}</a>
+        <a class="fp-button fp-button-outline" href="{{ catalog.feedback_urls.caso }}" rel="noopener noreferrer">{{ copy.analysis.commercial_case_cta }}</a>
       </div>
     </section>{% endif %}
   </main>
 
-  <footer class="fp-footer"><p>Datos reales anonimizados. La fuente estructurada original no se publica.</p><p>{{ catalog.release_label }}</p></footer>
+  <footer class="fp-footer"><p>{{ copy.analysis.footer }}</p><p>{{ catalog.release_label }}</p></footer>
 </body>
 </html>

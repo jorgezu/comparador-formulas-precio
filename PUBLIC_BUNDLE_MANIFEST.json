@@ -64,11 +64,11 @@
     },
     {
       "path": "src/cepos/formula_web/contact.py",
-      "sha256": "b7065b27adaa5870a49a8ee373793e56c281a0ce905b7b0a8294fdcc33f304bf"
+      "sha256": "67cca97a7e4bd74777108a181fe1630faf6bd86cd8efc915d83e470b29394f64"
     },
     {
       "path": "src/cepos/formula_web/public_app.py",
-      "sha256": "d50fb7054a028539770204dfa75c922594499324402ec0f7b329c8bba4e7f461"
+      "sha256": "d3186c6ab32e097b72cf17c1979b80e19a73f9e010f5863729a425c9e2f1c0b1"
     },
     {
       "path": "src/cepos/formula_web/public_cases.py",
@@ -77,6 +77,10 @@
     {
       "path": "src/cepos/formula_web/public_catalog.py",
       "sha256": "2bcd02407c0c060ad38b22ae84b145819ce5904eb3fec85e89c8f6222b544547"
+    },
+    {
+      "path": "src/cepos/formula_web/public_copy.py",
+      "sha256": "1d0129aab3fc735e258f30ac4c9f49fb9a644649abc42cbe94d5454dade39196"
     },
     {
       "path": "src/cepos/formula_web/server.py",
@@ -108,7 +112,7 @@
     },
     {
       "path": "src/cepos/web/static/formula-public-analysis.js",
-      "sha256": "8650a5257d0137187db0ca4142d4d9d01eb59c279762d3448ece65daaf5083d4"
+      "sha256": "fecab3b894197f815f47deb92c62227f11794c58c979c5af840bb297efe6a037"
     },
     {
       "path": "src/cepos/web/static/formula-public.css",
@@ -120,7 +124,7 @@
     },
     {
       "path": "src/cepos/web/templates/formula_analysis.html",
-      "sha256": "e3b748ddfed9e0d9f423eb96a9b79aca6fbe36c7a6c37c293a4f91c16689a3a2"
+      "sha256": "318d67a4406c6e19b8da853196633d9c985ac5676f6700af3c180bdafa36de61"
     },
     {
       "path": "src/cepos/web/templates/formula_comparator.html",
@@ -128,15 +132,15 @@
     },
     {
       "path": "src/cepos/web/templates/formula_contact.html",
-      "sha256": "de895a3be1cafc34f71bd4e45ae3e9cbbc0a7fe04d1ed5ffb3721279761ee014"
+      "sha256": "51b2611c9acde9ccca9d8fd0d41de8d90e9a1a937175f1f90bb0c79aa8d9a477"
     },
     {
       "path": "src/cepos/web/templates/formula_lab.html",
-      "sha256": "f32b02bc86f58dc48a5616fab6f38b43ede1ec364b6882ea713635f66e77eef6"
+      "sha256": "94a9c3910b78c9b65364f49c1838221a1b8af3e8f6e476187a293b1fcbb314a1"
     },
     {
       "path": "src/cepos/web/templates/formula_public_landing.html",
-      "sha256": "0f1af8a223a5cc8a1a5d07960337cc711b7052161f1aebbe2f832c9eeb7fdd11"
+      "sha256": "69b3ecf434c57b40636a8198bdb470c0f1c85a77ff7d93d7fa5fbbd7bb5160ec"
     }
   ]
 }

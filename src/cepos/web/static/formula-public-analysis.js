@@ -167,21 +167,11 @@
       button.classList.toggle("is-active", active);
       button.setAttribute("aria-pressed", String(active));
     });
-    const copy = profile === "empresa"
-      ? {
-          guidance: "Prueba una baja asumible y observa su posición sin convertir el resultado en una recomendación automática.",
-          title: "¿Necesitas un análisis completo antes de presentar tu oferta?",
-          cta: "El análisis profesional puede incorporar costes, capacidades reales y distintos escenarios de competencia.",
-        }
-      : {
-          guidance: "Cambia una fórmula, un parámetro o una oferta y observa el efecto sin perder de vista la gráfica.",
-          title: "¿Quieres analizar tu propia licitación?",
-          cta: "El análisis profesional puede comparar fórmulas, justificar parámetros y documentar su comportamiento sobre ofertas reales.",
-    };
-    nodes.scenarioGuidance.textContent = copy.guidance;
+    const profileCopy = catalog.editorial.analysis_profiles[profile];
+    nodes.scenarioGuidance.textContent = profileCopy.guidance;
     if (nodes.commercialTitle && nodes.commercialCopy) {
-      nodes.commercialTitle.textContent = copy.title;
-      nodes.commercialCopy.textContent = copy.cta;
+      nodes.commercialTitle.textContent = profileCopy.commercial_title;
+      nodes.commercialCopy.textContent = profileCopy.commercial_body;
     }
     const url = new URL(window.location.href);
     url.searchParams.set("perfil", profile);

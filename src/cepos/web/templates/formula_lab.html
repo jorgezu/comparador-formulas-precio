@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
-  <meta name="description" content="Laboratorio teórico de fórmulas de valoración económica.">
-  <title>Laboratorio de fórmulas · {{ catalog.title }}</title>
+  <meta name="description" content="{{ copy.lab.meta_description }}">
+  <title>{{ copy.lab.page_title }} · {{ catalog.title }}</title>
   <link rel="stylesheet" href="{{ stylesheet_url }}">
   <script id="formula-catalog" type="application/json">{{ catalog | tojson }}</script>
   <script defer src="{{ format_script_url }}"></script>
@@ -13,87 +13,87 @@
 </head>
 <body class="fp-body fp-lab-page">
   <header class="fp-topbar">
-    <a class="fp-product" href="{{ home_url }}" aria-label="Volver al inicio">
+    <a class="fp-product" href="{{ home_url }}" aria-label="{{ copy.common.back_home_aria }}">
       <span class="fp-product-mark" aria-hidden="true">f(x)</span>
-      <span><strong>Laboratorio de fórmulas</strong><small>Comportamiento teórico</small></span>
+      <span><strong>{{ copy.lab.product_name }}</strong><small>{{ copy.lab.product_subtitle }}</small></span>
     </a>
-    <nav class="fp-nav" aria-label="Navegación principal">
-      <a href="{{ analyzer_url }}?perfil=administracion">Analizador</a>
-      <a aria-current="page" href="{{ lab_url }}">Laboratorio</a>
+    <nav class="fp-nav" aria-label="{{ copy.common.navigation_aria }}">
+      <a href="{{ analyzer_url }}?perfil=administracion">{{ copy.common.nav_analyzer }}</a>
+      <a aria-current="page" href="{{ lab_url }}">{{ copy.common.nav_lab }}</a>
     </nav>
   </header>
 
   <main class="fp-lab-shell">
     <header class="fp-lab-intro">
-      <p class="fp-kicker">Teoría antes del caso</p>
-      <h1>Comprender cómo reparte puntos cada fórmula</h1>
-      <p>La curva que se estudia antes de recibir ofertas parte de una hipótesis. Cuando la fórmula depende del conjunto, las referencias observadas pueden producir una curva efectiva diferente.</p>
+      <p class="fp-kicker">{{ copy.lab.intro_kicker }}</p>
+      <h1>{{ copy.lab.intro_title }}</h1>
+      <p>{{ copy.lab.intro_body }}</p>
       <div class="fp-theory-types">
-        <div><strong>Relativas</strong><span>La curva depende de la oferta mínima, la baja máxima u otros datos del conjunto.</span></div>
-        <div><strong>Absolutas</strong><span>Una misma baja mantiene su posición con parámetros fijos.</span></div>
-        <div><strong>Umbrales</strong><span>La pendiente cambia a partir de una baja definida.</span></div>
+        <div><strong>{{ copy.lab.relative_title }}</strong><span>{{ copy.lab.relative_body }}</span></div>
+        <div><strong>{{ copy.lab.absolute_title }}</strong><span>{{ copy.lab.absolute_body }}</span></div>
+        <div><strong>{{ copy.lab.threshold_title }}</strong><span>{{ copy.lab.threshold_body }}</span></div>
       </div>
-      <div class="fp-relation-strip" aria-label="Casos particulares entre fórmulas">
+      <div class="fp-relation-strip" aria-label="{{ copy.lab.particular_cases_aria }}">
         <span>Exponencial relativa</span><b>n = 1 ↓</b><strong>Lineal</strong><b>↑ k = 1</b><span>Raíz k-ésima</span>
       </div>
     </header>
 
-    <section class="fp-lab-workspace" aria-label="Laboratorio interactivo">
+    <section class="fp-lab-workspace" aria-label="{{ copy.lab.workspace_aria }}">
       <aside class="fp-lab-formulas">
-        <label for="lab-method">Fórmula</label>
+        <label for="lab-method">{{ copy.lab.formula_label }}</label>
         <select id="lab-method"></select>
-        <nav id="lab-method-list" aria-label="Catálogo de fórmulas"></nav>
+        <nav id="lab-method-list" aria-label="{{ copy.lab.catalog_aria }}"></nav>
       </aside>
 
       <section class="fp-lab-stage" aria-labelledby="lab-title">
         <div class="fp-lab-title-row">
-          <div><span class="fp-type-badge" id="lab-type"></span><h2 id="lab-title">Cargando fórmula…</h2></div>
-          <a class="fp-button fp-button-outline" id="real-cases-link" href="{{ analyzer_url }}?perfil=administracion">Ver en casos reales</a>
+          <div><span class="fp-type-badge" id="lab-type"></span><h2 id="lab-title">{{ copy.lab.loading_formula }}</h2></div>
+          <a class="fp-button fp-button-outline" id="real-cases-link" href="{{ analyzer_url }}?perfil=administracion">{{ copy.lab.real_cases_cta }}</a>
         </div>
         <div class="fp-equation-display" id="lab-equation"></div>
-        <div class="fp-formula-taxonomy"><span>Familia: <strong id="lab-family"></strong></span><span>Grupo de equivalencia: <strong id="lab-equivalence-group"></strong></span></div>
+        <div class="fp-formula-taxonomy"><span>{{ copy.lab.family_label }} <strong id="lab-family"></strong></span><span>{{ copy.lab.equivalence_group_label }} <strong id="lab-equivalence-group"></strong></span></div>
         <section class="fp-equivalent-forms" id="lab-equivalent-forms">
-          <div class="fp-equivalent-heading"><div><p class="fp-kicker">Formas equivalentes</p><h3>Misma fórmula, distinta expresión</h3></div><span>Las variables cambian; la relación matemática no.</span></div>
+          <div class="fp-equivalent-heading"><div><p class="fp-kicker">{{ copy.lab.equivalent_kicker }}</p><h3>{{ copy.lab.equivalent_title }}</h3></div><span>{{ copy.lab.equivalent_body }}</span></div>
           <div class="fp-equivalent-grid">
-            <article id="lab-offers-form"><h4>Expresión en ofertas</h4><div class="fp-equation-display" id="lab-equation-offers"></div></article>
+            <article id="lab-offers-form"><h4>{{ copy.lab.offers_expression }}</h4><div class="fp-equation-display" id="lab-equation-offers"></div></article>
             <span class="fp-equivalent-arrow" aria-hidden="true">↔</span>
-            <article id="lab-discounts-form"><h4>Expresión en bajas</h4><div class="fp-equation-display" id="lab-equation-discounts"></div></article>
+            <article id="lab-discounts-form"><h4>{{ copy.lab.discounts_expression }}</h4><div class="fp-equation-display" id="lab-equation-discounts"></div></article>
           </div>
         </section>
         <p class="fp-lab-description" id="lab-description"></p>
         <div class="fp-bmax-lab-controls">
-          <label class="fp-lab-control"><span><span>Contexto orientativo</span></span><select id="lab-contract-type"><option value="OBRAS">Obras</option><option value="SUMINISTROS" selected>Suministros</option><option value="SERVICIOS">Servicios</option></select></label>
-          <label class="fp-lab-control"><span><span>Baja máxima esperada</span><strong id="lab-expected-bmax-value">30 %</strong></span><div><input id="lab-expected-bmax" type="range" min="5" max="95" step="5" value="30"><input id="lab-expected-bmax-number" type="number" min="0.01" max="99.99" step="5" value="30" inputmode="decimal" aria-label="Baja máxima esperada (valor)"></div><small>Hipótesis de trabajo, no dato real.</small></label>
-          <label class="fp-lab-control"><span><span>Baja máxima observada</span><strong id="lab-observed-bmax-value">20,00 %</strong></span><div><input id="lab-observed-bmax" type="range" min="0.01" max="99.99" step="0.01" value="20"><input id="lab-observed-bmax-number" type="number" min="0.01" max="99.99" step="0.01" value="20" inputmode="decimal" aria-label="Baja máxima observada (valor)"></div><small>Dato del escenario simulado.</small></label>
+          <label class="fp-lab-control"><span><span>{{ copy.lab.context_label }}</span></span><select id="lab-contract-type"><option value="OBRAS">{{ copy.lab.contract_works }}</option><option value="SUMINISTROS" selected>{{ copy.lab.contract_supplies }}</option><option value="SERVICIOS">{{ copy.lab.contract_services }}</option></select></label>
+          <label class="fp-lab-control"><span><span>{{ copy.lab.expected_bmax }}</span><strong id="lab-expected-bmax-value">30 %</strong></span><div><input id="lab-expected-bmax" type="range" min="5" max="95" step="5" value="30"><input id="lab-expected-bmax-number" type="number" min="0.01" max="99.99" step="5" value="30" inputmode="decimal" aria-label="{{ copy.lab.expected_bmax_value_aria }}"></div><small>{{ copy.lab.expected_bmax_help }}</small></label>
+          <label class="fp-lab-control"><span><span>{{ copy.lab.observed_bmax }}</span><strong id="lab-observed-bmax-value">20,00 %</strong></span><div><input id="lab-observed-bmax" type="range" min="0.01" max="99.99" step="0.01" value="20"><input id="lab-observed-bmax-number" type="number" min="0.01" max="99.99" step="0.01" value="20" inputmode="decimal" aria-label="{{ copy.lab.observed_bmax_value_aria }}"></div><small>{{ copy.lab.observed_bmax_help }}</small></label>
         </div>
         <div class="fp-lab-controls" id="lab-controls"></div>
-        <label class="fp-check-control fp-lab-result-toggle"><input id="lab-show-resulting-curve" type="checkbox" checked> <span>Mostrar curva resultante</span></label>
-        <div class="fp-status" id="lab-status" role="status" aria-live="polite">Calculando curva teórica…</div>
+        <label class="fp-check-control fp-lab-result-toggle"><input id="lab-show-resulting-curve" type="checkbox" checked> <span>{{ copy.lab.show_resulting_curve }}</span></label>
+        <div class="fp-status" id="lab-status" role="status" aria-live="polite">{{ copy.lab.calculating }}</div>
         <div class="fp-chart-wrap fp-lab-chart-wrap">
           <svg id="lab-chart" viewBox="0 0 920 480" role="img" aria-labelledby="lab-chart-title lab-chart-desc">
-            <title id="lab-chart-title">Curva teórica de la fórmula seleccionada</title>
-            <desc id="lab-chart-desc">Comparación de la puntuación teórica para bajas entre cero y treinta por ciento.</desc>
+            <title id="lab-chart-title">{{ copy.lab.chart_title }}</title>
+            <desc id="lab-chart-desc">{{ copy.lab.chart_description }}</desc>
           </svg>
         </div>
         <div class="fp-chart-legend" id="lab-legend"></div>
       </section>
 
       <aside class="fp-lab-notes">
-        <section><p class="fp-kicker">Dependencia</p><h3 id="lab-dependency"></h3><p id="lab-dependency-copy"></p></section>
-        <section><p class="fp-kicker">Baja 0 %</p><h3 id="lab-zero-score"></h3><p id="lab-zero-copy"></p></section>
-        <section><p class="fp-kicker">Particularidades</p><ul id="lab-particularities"></ul></section>
-        <section id="lab-special-cases-section"><p class="fp-kicker">Casos particulares</p><ul id="lab-special-cases"></ul></section>
-        <section id="lab-equivalences-section"><p class="fp-kicker">Equivalencias verificadas</p><ul id="lab-equivalences"></ul></section>
+        <section><p class="fp-kicker">{{ copy.lab.dependency_kicker }}</p><h3 id="lab-dependency"></h3><p id="lab-dependency-copy"></p></section>
+        <section><p class="fp-kicker">{{ copy.lab.zero_discount_kicker }}</p><h3 id="lab-zero-score"></h3><p id="lab-zero-copy"></p></section>
+        <section><p class="fp-kicker">{{ copy.lab.particularities_kicker }}</p><ul id="lab-particularities"></ul></section>
+        <section id="lab-special-cases-section"><p class="fp-kicker">{{ copy.lab.special_cases_kicker }}</p><ul id="lab-special-cases"></ul></section>
+        <section id="lab-equivalences-section"><p class="fp-kicker">{{ copy.lab.equivalences_kicker }}</p><ul id="lab-equivalences"></ul></section>
       </aside>
     </section>
 
     <section class="fp-formula-reference" aria-labelledby="catalog-title">
-      <div><p class="fp-kicker">Catálogo matemático</p><h2 id="catalog-title">Catálogo canónico revisado</h2><p>Nombres públicos, ecuaciones y propiedades contrastados con la implementación actual. Las discrepancias se conservan como asuntos de validación, no se corrigen por intuición.</p></div>
+      <div><p class="fp-kicker">{{ copy.lab.catalog_kicker }}</p><h2 id="catalog-title">{{ copy.lab.catalog_title }}</h2><p>{{ copy.lab.catalog_body }}</p></div>
       <div id="canonical-cards" class="fp-canonical-grid"></div>
     </section>
-    {% if catalog.feedback_url %}<section class="fp-feedback-band"><div><p class="fp-kicker">Participar</p><h2>¿Conoces otra fórmula? Proponla</h2><p>Seguimos probando nuevas fórmulas y variantes, tanto propias como utilizadas en otras licitaciones.</p></div><div class="fp-cta-actions"><a class="fp-button fp-button-outline" href="{{ catalog.feedback_urls.feedback }}" rel="noopener noreferrer">¿Has detectado una discrepancia? Cuéntanoslo</a><a class="fp-button fp-button-primary" href="{{ catalog.feedback_urls.formula }}" rel="noopener noreferrer">Proponer una fórmula</a></div></section>{% endif %}
+    {% if catalog.feedback_url %}<section class="fp-feedback-band"><div><p class="fp-kicker">{{ copy.lab.feedback_kicker }}</p><h2>{{ copy.lab.feedback_title }}</h2><p>{{ copy.lab.feedback_body }}</p></div><div class="fp-cta-actions"><a class="fp-button fp-button-outline" href="{{ catalog.feedback_urls.feedback }}" rel="noopener noreferrer">{{ copy.lab.feedback_discrepancy_cta }}</a><a class="fp-button fp-button-primary" href="{{ catalog.feedback_urls.formula }}" rel="noopener noreferrer">{{ copy.lab.feedback_formula_cta }}</a></div></section>{% endif %}
   </main>
 
-  <footer class="fp-footer"><p>Las curvas del laboratorio se calculan con el mismo backend validado que los casos reales.</p><p>{{ catalog.release_label }}</p></footer>
+  <footer class="fp-footer"><p>{{ copy.lab.footer }}</p><p>{{ catalog.release_label }}</p></footer>
 </body>
 </html>

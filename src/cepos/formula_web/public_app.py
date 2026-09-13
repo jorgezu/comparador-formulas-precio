@@ -31,6 +31,7 @@ from .contact import (
     ResendContactSender,
     validate_submission,
 )
+from .public_copy import PUBLIC_COPY
 from .service import FormulaPriceComparatorService, FormulaWebInputError, PRODUCT_VERSION
 
 
@@ -39,7 +40,7 @@ WEB_DIR = Path(__file__).resolve().parents[1] / "web"
 TEMPLATES = Jinja2Templates(directory=str(WEB_DIR / "templates"))
 STATIC_DIR = WEB_DIR / "static"
 MAX_REQUEST_BYTES = 64 * 1024
-ASSET_VERSION = "20260913-contact-v1"
+ASSET_VERSION = "20260913-public-copy-v1"
 
 
 class SecurityHeadersMiddleware:
@@ -98,7 +99,10 @@ def _page_context(request: Request) -> dict[str, Any]:
     }
     for internal_key in ("product_version", "engine_version", "canonical_catalog_version"):
         catalog.pop(internal_key, None)
-    catalog["release_label"] = "Versión beta"
+    catalog["release_label"] = PUBLIC_COPY["common"]["release_label"]
+    catalog["editorial"] = {
+        "analysis_profiles": PUBLIC_COPY["analysis"]["profiles"],
+    }
     catalog["api_url"] = "/api/formula-price-comparator/compare"
     catalog["home_url"] = "/formulas"
     catalog["analyzer_url"] = "/formulas/analizador"
@@ -109,6 +113,7 @@ def _page_context(request: Request) -> dict[str, Any]:
         "home_url": catalog["home_url"],
         "analyzer_url": catalog["analyzer_url"],
         "lab_url": catalog["lab_url"],
+        "copy": PUBLIC_COPY,
         "stylesheet_url": f"/static/formula-public.css?v={ASSET_VERSION}",
         "format_script_url": f"/static/formula-format.js?v={ASSET_VERSION}",
     }
@@ -199,7 +204,7 @@ def _contact_response(
             "delivery_configured": _contact_sender_configured(
                 request.app.state.contact_sender
             ),
-            "release_label": "Versión beta",
+            "release_label": PUBLIC_COPY["common"]["release_label"],
         }
     )
     return TEMPLATES.TemplateResponse(
@@ -219,7 +224,7 @@ async def _read_contact_fields(request: Request) -> dict[str, str]:
     content_type = request.headers.get("content-type", "").split(";", 1)[0].strip().lower()
     if content_type != "application/x-www-form-urlencoded":
         raise ContactValidationError(
-            {"form": "El formulario no tiene un formato válido."}
+            {"form": PUBLIC_COPY["contact"]["validation"]["invalid_format"]}
         )
     content_length = request.headers.get("content-length")
     if content_length:
@@ -227,11 +232,11 @@ async def _read_contact_fields(request: Request) -> dict[str, str]:
             parsed_length = int(content_length)
         except ValueError as exc:
             raise ContactValidationError(
-                {"form": "El formulario no tiene un tamaño válido."}
+                {"form": PUBLIC_COPY["contact"]["validation"]["invalid_size"]}
             ) from exc
         if parsed_length > CONTACT_FORM_MAX_BYTES:
             raise ContactValidationError(
-                {"form": "El formulario es demasiado grande."}
+                {"form": PUBLIC_COPY["contact"]["validation"]["too_large"]}
             )
 
     body = bytearray()
@@ -239,7 +244,7 @@ async def _read_contact_fields(request: Request) -> dict[str, str]:
         body.extend(chunk)
         if len(body) > CONTACT_FORM_MAX_BYTES:
             raise ContactValidationError(
-                {"form": "El formulario es demasiado grande."}
+                {"form": PUBLIC_COPY["contact"]["validation"]["too_large"]}
             )
     try:
         pairs = parse_qsl(
@@ -247,7 +252,7 @@ async def _read_contact_fields(request: Request) -> dict[str, str]:
         )
     except (UnicodeDecodeError, ValueError) as exc:
         raise ContactValidationError(
-            {"form": "El formulario no tiene un formato válido."}
+            {"form": PUBLIC_COPY["contact"]["validation"]["invalid_format"]}
         ) from exc
     allowed = {
         "name",
@@ -261,7 +266,7 @@ async def _read_contact_fields(request: Request) -> dict[str, str]:
     }
     if any(key not in allowed for key, _ in pairs):
         raise ContactValidationError(
-            {"form": "El formulario contiene campos no válidos."}
+            {"form": PUBLIC_COPY["contact"]["validation"]["invalid_fields"]}
         )
     return dict(pairs)
 
@@ -275,7 +280,9 @@ async def contact_submit(request: Request) -> Response:
             request,
             values=fallback,
             errors=exc.errors,
-            form_error=exc.errors.get("form", "Revisa los campos indicados."),
+            form_error=exc.errors.get(
+                "form", PUBLIC_COPY["contact"]["validation"]["review_fields"]
+            ),
             status_code=422,
         )
 
@@ -290,7 +297,7 @@ async def contact_submit(request: Request) -> Response:
             request,
             values=values,
             errors=exc.errors,
-            form_error="Revisa los campos indicados.",
+            form_error=PUBLIC_COPY["contact"]["validation"]["review_fields"],
             status_code=422,
         )
 
@@ -299,7 +306,7 @@ async def contact_submit(request: Request) -> Response:
         return _contact_response(
             request,
             values=values,
-            form_error="Has enviado varios mensajes en poco tiempo. Espera unos minutos antes de volver a intentarlo.",
+            form_error=PUBLIC_COPY["contact"]["delivery"]["rate_limited"],
             status_code=429,
         )
     try:
@@ -308,14 +315,14 @@ async def contact_submit(request: Request) -> Response:
         return _contact_response(
             request,
             values=values,
-            form_error="El envío no está configurado todavía en este entorno. Inténtalo de nuevo más adelante.",
+            form_error=PUBLIC_COPY["contact"]["delivery"]["not_configured"],
             status_code=503,
         )
     except ContactDeliveryError:
         return _contact_response(
             request,
             values=values,
-            form_error="No hemos podido enviar el mensaje. Inténtalo de nuevo dentro de unos minutos.",
+            form_error=PUBLIC_COPY["contact"]["delivery"]["failed"],
             status_code=502,
         )
     return _contact_response(request, values=values, success=True)

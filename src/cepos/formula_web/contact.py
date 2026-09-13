@@ -17,26 +17,16 @@ from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 from uuid import uuid4
 
+from .public_copy import PUBLIC_COPY
+
 
 CONTACT_FORM_MAX_BYTES = 16 * 1024
 RESEND_ENDPOINT = "https://api.resend.com/emails"
 EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+CONTACT_COPY = PUBLIC_COPY["contact"]
 
-PROFILE_OPTIONS = (
-    ("administracion", "Administración / técnico redactor"),
-    ("control", "Intervención / Jurídico / Control"),
-    ("empresa", "Empresa licitadora"),
-    ("consultoria", "Consultoría"),
-    ("otro", "Otro"),
-)
-
-REASON_OPTIONS = (
-    ("feedback", "Opinión / corrección"),
-    ("formula", "Proponer fórmula"),
-    ("caso", "Proponer caso real"),
-    ("analisis", "Solicitar análisis"),
-    ("otro", "Otro"),
-)
+PROFILE_OPTIONS = tuple(CONTACT_COPY["profiles"])
+REASON_OPTIONS = tuple(CONTACT_COPY["reasons"])
 
 PROFILE_LABELS = dict(PROFILE_OPTIONS)
 REASON_LABELS = dict(REASON_OPTIONS)
@@ -44,7 +34,7 @@ REASON_LABELS = dict(REASON_OPTIONS)
 
 class ContactValidationError(ValueError):
     def __init__(self, errors: Mapping[str, str]) -> None:
-        super().__init__("El formulario contiene errores.")
+        super().__init__(CONTACT_COPY["validation"]["form_contains_errors"])
         self.errors = dict(errors)
 
 
@@ -115,39 +105,39 @@ def validate_submission(
         name = _clean_text(fields.get("name", ""), 100)
     except ValueError:
         name = ""
-        errors["name"] = "El nombre no puede superar 100 caracteres."
+        errors["name"] = CONTACT_COPY["validation"]["name_too_long"]
 
     try:
         email = _clean_text(fields.get("email", ""), 254)
     except ValueError:
         email = ""
-        errors["email"] = "El email no tiene un formato válido."
+        errors["email"] = CONTACT_COPY["validation"]["invalid_email"]
     if email and not _valid_email(email):
-        errors["email"] = "El email no tiene un formato válido."
+        errors["email"] = CONTACT_COPY["validation"]["invalid_email"]
 
     profile = fields.get("profile", "")
     if profile not in PROFILE_LABELS:
-        errors["profile"] = "Selecciona un perfil válido."
+        errors["profile"] = CONTACT_COPY["validation"]["invalid_profile"]
 
     reason = fields.get("reason", "")
     if reason not in REASON_LABELS:
-        errors["reason"] = "Selecciona un motivo válido."
+        errors["reason"] = CONTACT_COPY["validation"]["invalid_reason"]
 
     try:
         message = _clean_text(fields.get("message", ""), 5_000)
     except ValueError:
         message = ""
-        errors["message"] = "El mensaje no puede superar 5.000 caracteres."
+        errors["message"] = CONTACT_COPY["validation"]["message_too_long"]
     if not message:
-        errors["message"] = "Escribe un mensaje antes de enviarlo."
+        errors["message"] = CONTACT_COPY["validation"]["message_required"]
 
     try:
         reference_url = _clean_text(fields.get("reference_url", ""), 2_000)
     except ValueError:
         reference_url = ""
-        errors["reference_url"] = "El enlace no tiene un formato válido."
+        errors["reference_url"] = CONTACT_COPY["validation"]["invalid_reference"]
     if reference_url and not _valid_reference_url(reference_url):
-        errors["reference_url"] = "Introduce una URL http o https válida."
+        errors["reference_url"] = CONTACT_COPY["validation"]["invalid_reference_url"]
 
     try:
         origin = _clean_text(fields.get("origin", "/contacto"), 500) or "/contacto"
@@ -221,28 +211,29 @@ class ResendContactSender:
         if not api_key or not recipient or not sender:
             raise ContactDeliveryNotConfigured("Contact delivery is not configured")
 
+        email_copy = CONTACT_COPY["email"]
         lines = [
-            f"Nombre: {submission.name or 'No indicado'}",
-            f"Email: {submission.email or 'No indicado'}",
-            f"Perfil: {submission.profile_label}",
-            f"Motivo: {submission.reason_label}",
+            f"{email_copy['name']}: {submission.name or email_copy['not_provided']}",
+            f"{email_copy['email']}: {submission.email or email_copy['not_provided']}",
+            f"{email_copy['profile']}: {submission.profile_label}",
+            f"{email_copy['reason']}: {submission.reason_label}",
             "",
-            "Mensaje:",
+            email_copy["message"],
             submission.message,
         ]
         if submission.reference_url:
-            lines.extend(("", f"Enlace al expediente / pliego: {submission.reference_url}"))
+            lines.extend(("", f"{email_copy['reference']}: {submission.reference_url}"))
         lines.extend(
             (
                 "",
-                f"Origen: {submission.origin}",
-                f"Fecha/hora servidor: {submission.submitted_at.astimezone(timezone.utc).isoformat()}",
+                f"{email_copy['origin']}: {submission.origin}",
+                f"{email_copy['submitted_at']}: {submission.submitted_at.astimezone(timezone.utc).isoformat()}",
             )
         )
         payload: dict[str, object] = {
             "from": sender,
             "to": [recipient],
-            "subject": f"[TenderLab] {submission.reason_label} · {submission.profile_label}",
+            "subject": f"{email_copy['subject_prefix']} {submission.reason_label} · {submission.profile_label}",
             "text": "\n".join(lines),
         }
         if submission.email:
