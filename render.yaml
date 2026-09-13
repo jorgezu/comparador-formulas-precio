@@ -10,3 +10,9 @@ services:
     envVars:
       - key: FORMULA_PUBLIC_ALLOWED_HOSTS
         value: "*.onrender.com,localhost,127.0.0.1"
+      - key: RESEND_API_KEY
+        sync: false
+      - key: FORMULA_FEEDBACK_EMAIL
+        sync: false
+      - key: FORMULA_FEEDBACK_FROM
+        sync: false

@@ -14,6 +14,13 @@ REQUIRED_METHOD_KEYS = {
     "implementation_expression",
     "equation_plain",
     "equation_mathml",
+    "equation_offers_plain",
+    "equation_offers_mathml",
+    "equation_discounts_plain",
+    "equation_discounts_mathml",
+    "family",
+    "equivalence_group",
+    "special_cases",
     "reference_type",
     "dependency",
     "parameters",
@@ -32,7 +39,7 @@ class PublicFormulaCanonicalCatalog:
 
     def __init__(self, artifact_path: Path) -> None:
         artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
-        if artifact.get("schema_version") != "FORMULA_CANONICAL_CATALOG_V1":
+        if artifact.get("schema_version") != "FORMULA_CANONICAL_CATALOG_V2":
             raise ValueError("Unsupported canonical formula catalog")
         raw_methods = artifact.get("methods")
         if not isinstance(raw_methods, list) or not raw_methods:
@@ -62,6 +69,8 @@ class PublicFormulaCanonicalCatalog:
             "description",
             "behavior",
             "zero_discount_behavior",
+            "family",
+            "equivalence_group",
         ):
             if not isinstance(method[key], str) or not method[key].strip():
                 raise ValueError(f"Invalid canonical formula value: {key}")
@@ -73,6 +82,7 @@ class PublicFormulaCanonicalCatalog:
             "verified_equivalences",
             "source_alignment",
             "discrepancies",
+            "special_cases",
         ):
             if not isinstance(method[key], list) or any(
                 not isinstance(value, str) for value in method[key]
@@ -80,6 +90,19 @@ class PublicFormulaCanonicalCatalog:
                 raise ValueError(f"Invalid canonical formula list: {key}")
         if "<math" not in method["equation_mathml"]:
             raise ValueError("Canonical equation must include MathML")
+        for key in (
+            "equation_offers_plain",
+            "equation_offers_mathml",
+            "equation_discounts_plain",
+            "equation_discounts_mathml",
+        ):
+            if method[key] is not None and (
+                not isinstance(method[key], str) or not method[key].strip()
+            ):
+                raise ValueError(f"Invalid canonical optional equation: {key}")
+        for key in ("equation_offers_mathml", "equation_discounts_mathml"):
+            if method[key] is not None and "<math" not in method[key]:
+                raise ValueError(f"Canonical equation must include MathML: {key}")
         return method
 
     def methods(self) -> dict[str, dict[str, Any]]:

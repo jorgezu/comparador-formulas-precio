@@ -58,6 +58,12 @@
 
         <details class="fp-control-section" open>
           <summary>Parámetros</summary>
+          <div class="fp-bmax-control">
+            <label for="expected-bmax"><span>Baja máxima esperada</span><strong id="expected-bmax-value">—</strong></label>
+            <div><input id="expected-bmax" type="range" min="5" max="95" step="5"><input id="expected-bmax-number" type="number" min="0.01" max="99.99" step="5" inputmode="decimal" aria-label="Baja máxima esperada (valor)"></div>
+            <p>Hipótesis de trabajo, no dato real.</p>
+            <p id="bmax-inline-comparison"></p>
+          </div>
           <div class="fp-parameter-list" id="parameter-list"></div>
         </details>
 
@@ -88,6 +94,10 @@
             <h2 id="chart-title">Puntos obtenidos según la baja</h2>
           </div>
           <a class="fp-text-link" id="understand-formula-link" href="{{ lab_url }}">Entender esta fórmula</a>
+        </div>
+        <div class="fp-curve-toolbar">
+          <div id="bmax-summary" class="fp-bmax-summary" aria-live="polite"></div>
+          <label class="fp-check-control"><input id="show-resulting-curve" type="checkbox"> <span>Mostrar curva resultante</span></label>
         </div>
         <div class="fp-chart-wrap">
           <svg id="result-chart" viewBox="0 0 920 500" role="img" aria-labelledby="chart-svg-title chart-svg-desc">
@@ -136,12 +146,15 @@
       <ul id="conclusion-list"></ul>
     </section>
 
-    <section class="fp-commercial-cta">
+    {% if catalog.feedback_url %}<section class="fp-commercial-cta">
       <div><p class="fp-kicker">Análisis profesional</p><h2 id="commercial-cta-title">¿Quieres analizar tu propia licitación?</h2><p id="commercial-cta-copy"></p></div>
-      <a class="fp-button fp-button-primary" href="{{ home_url }}">Volver al proyecto</a>
-    </section>
+      <div class="fp-cta-actions">
+        <a class="fp-button fp-button-primary" href="{{ catalog.feedback_urls.analisis }}" rel="noopener noreferrer">Solicitar un análisis</a>
+        <a class="fp-button fp-button-outline" href="{{ catalog.feedback_urls.caso }}" rel="noopener noreferrer">Proponer un caso real</a>
+      </div>
+    </section>{% endif %}
   </main>
 
-  <footer class="fp-footer"><p>Datos reales anonimizados. La fuente estructurada original no se publica.</p><p>{{ catalog.product_version }}</p></footer>
+  <footer class="fp-footer"><p>Datos reales anonimizados. La fuente estructurada original no se publica.</p><p>{{ catalog.release_label }}</p></footer>
 </body>
 </html>

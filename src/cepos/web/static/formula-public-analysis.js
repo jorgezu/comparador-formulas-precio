@@ -28,6 +28,12 @@
     offerCount: $("#offer-count"),
     tenderPrice: $("#tender-price"),
     pmax: $("#pmax"),
+    expectedBmax: $("#expected-bmax"),
+    expectedBmaxNumber: $("#expected-bmax-number"),
+    expectedBmaxValue: $("#expected-bmax-value"),
+    bmaxInlineComparison: $("#bmax-inline-comparison"),
+    bmaxSummary: $("#bmax-summary"),
+    showResultingCurve: $("#show-resulting-curve"),
     impactSummary: $("#impact-summary"),
     chart: $("#result-chart"),
     chartLegend: $("#chart-legend"),
@@ -59,6 +65,7 @@
   let rankingMode = "price";
   let rankingMethodId = null;
   let selectedOfferId = null;
+  let expectedBmaxPct = 30;
   let debounceTimer = null;
   let requestController = null;
   let offerSequence = 20;
@@ -92,6 +99,10 @@
       .filter((offer) => !offer.excluded)
       .map(({ offer_id, name, price }) => ({ offer_id, name, price })),
   });
+
+  const initialBmaxForCase = (selectedCase) => Number(
+    catalog.theoretical_bmax_defaults[selectedCase.contract_type] || 30
+  );
 
   const nonPricePoints = (offerId) => Number(
     offers.find((offer) => offer.offer_id === offerId)?.non_price_points || 0
@@ -166,10 +177,12 @@
           guidance: "Cambia una fórmula, un parámetro o una oferta y observa el efecto sin perder de vista la gráfica.",
           title: "¿Quieres analizar tu propia licitación?",
           cta: "El análisis profesional puede comparar fórmulas, justificar parámetros y documentar su comportamiento sobre ofertas reales.",
-        };
+    };
     nodes.scenarioGuidance.textContent = copy.guidance;
-    nodes.commercialTitle.textContent = copy.title;
-    nodes.commercialCopy.textContent = copy.cta;
+    if (nodes.commercialTitle && nodes.commercialCopy) {
+      nodes.commercialTitle.textContent = copy.title;
+      nodes.commercialCopy.textContent = copy.cta;
+    }
     const url = new URL(window.location.href);
     url.searchParams.set("perfil", profile);
     window.history.replaceState({}, "", url);
@@ -217,6 +230,9 @@
     nodes.caseSelector.value = currentCase.case_id;
     nodes.tenderPrice.value = String(currentCase.tender_price);
     nodes.pmax.value = String(currentCase.pmax);
+    expectedBmaxPct = initialBmaxForCase(currentCase);
+    nodes.expectedBmax.value = String(expectedBmaxPct);
+    nodes.expectedBmaxNumber.value = String(expectedBmaxPct);
     offers = currentCase.offers.map((offer) => ({
       offer_id: offer.offer_id,
       name: offer.name,
@@ -229,10 +245,31 @@
     rankingMethodId = currentCase.actual_formula_supported ? currentCase.actual_method_id : null;
     selectedOfferId = null;
     renderCaseStrip();
+    renderBmaxControl();
     renderMethodList();
     renderParameters();
     renderOffers();
     scheduleCompare(0);
+  };
+
+  const signedPp = (value) => `${value >= 0 ? "+" : "−"}${percent.format(Math.abs(value))} p.p.`;
+
+  const observedBmax = () => {
+    const tenderPrice = Number(nodes.tenderPrice.value);
+    return Math.max(...offers.filter((offer) => !offer.excluded).map(
+      (offer) => (tenderPrice - offer.price) / tenderPrice * 100
+    ));
+  };
+
+  const renderBmaxControl = (result = null) => {
+    const observed = result?.scenario.maximum_discount_pct ?? observedBmax();
+    nodes.expectedBmaxValue.textContent = `${summaryNumber.format(expectedBmaxPct)} %`;
+    nodes.bmaxInlineComparison.textContent = `Esperada ${summaryNumber.format(expectedBmaxPct)} % → observada ${percent.format(observed)} %`;
+    nodes.bmaxSummary.replaceChildren(
+      element("span", "", `Bmax esperada: ${summaryNumber.format(expectedBmaxPct)} %`),
+      element("span", "", `Bmax real: ${percent.format(observed)} %`),
+      element("strong", "", `Diferencia: ${signedPp(observed - expectedBmaxPct)}`)
+    );
   };
 
   const equationDetails = (method) => {
@@ -242,13 +279,22 @@
     summary.title = `Ver ecuación de ${method.name}`;
     summary.textContent = "i";
     const body = element("div", "fp-equation-popover-body");
+    body.append(element("h3", "", method.name));
     const equation = element("div", "fp-equation-inline");
     equation.innerHTML = method.equation_mathml;
     body.append(
       equation,
-      element("strong", "", method.reference_type),
-      element("p", "", method.description)
+      element("strong", "", `${method.reference_type} · ${method.dependency}`)
     );
+    if (method.equation_offers_plain && method.equation_discounts_plain) {
+      body.append(element("p", "fp-equivalent-note", "También tiene una forma equivalente: misma fórmula, distintas variables."));
+    }
+    if (method.special_cases.length) {
+      body.append(element("p", "fp-special-case-note", method.special_cases[0]));
+    }
+    const labLink = element("a", "fp-popover-link", "Ver en el Laboratorio");
+    labLink.href = `${catalog.lab_url}#${method.method_id}`;
+    body.append(labLink);
     details.append(summary, body);
     return details;
   };
@@ -316,11 +362,27 @@
         if (variant.value !== "custom") {
           const chosen = method.variants.find((item) => item.variant_id === variant.value);
           state.parameters = deepCopy(chosen.parameters);
+        } else {
+          const fallback = method.variants.find((item) => !item.dynamic)?.parameters || {};
+          method.parameter_fields.forEach((field) => {
+            if (!Number.isFinite(Number(state.parameters[field.name]))) {
+              state.parameters[field.name] = fallback[field.name];
+            }
+          });
         }
         renderParameters();
         scheduleCompare(0);
       });
       group.append(variant);
+      const selectedVariant = method.variants.find((item) => item.variant_id === state.variant_id);
+      if (selectedVariant?.dynamic) {
+        group.append(element(
+          "p",
+          "fp-parameter-derived",
+          `n se calcula automáticamente: Bmax esperada ${summaryNumber.format(expectedBmaxPct)} % → n = ${summaryNumber.format(expectedBmaxPct / 5)}; Bmax real ${summaryNumber.format(observedBmax())} % → n = ${summaryNumber.format(observedBmax() / 5)}.`
+        ));
+        return group;
+      }
       method.parameter_fields.forEach((field) => {
         const label = element("label", "fp-parameter-field");
         const heading = element("span");
@@ -404,7 +466,12 @@
       const response = await fetch(catalog.api_url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...currentScenario(), methods, baseline }),
+        body: JSON.stringify({
+          ...currentScenario(),
+          expected_maximum_discount_pct: expectedBmaxPct,
+          methods,
+          baseline,
+        }),
         signal: requestController.signal,
       });
       const result = await response.json();
@@ -564,20 +631,31 @@
 
   const renderChart = (result) => {
     clearChart();
-    const maxDiscount = Math.max(
-      ...result.rows.map((row) => row.discount_pct),
-      ...result.curves.flatMap((curve) => curve.points.map((point) => point.discount_pct))
-    );
+    const maxDiscount = result.scenario.visual_maximum_discount_pct;
     const axes = drawAxes(maxDiscount, result.scenario.pmax);
     result.curves.forEach((curve) => {
       const color = colorByMethod.get(curve.method_id);
-      const points = [...curve.points].sort((a, b) => a.discount_pct - b.discount_pct);
+      const points = [...curve.expected_points].sort((a, b) => a.discount_pct - b.discount_pct);
       const path = svgElement("path", {
         d: linePath(points.map((point) => [axes.x(point.discount_pct), axes.y(point.score)])),
-        class: `fp-chart-line${curve.method_id === currentCase.actual_method_id ? " is-actual" : ""}`,
+        class: "fp-chart-line",
       });
       path.style.setProperty("--series-color", color);
       nodes.chart.append(path);
+      if (
+        nodes.showResultingCurve.checked
+        && curve.method_id === rankingMethodId
+        && !curve.curves_coincide
+        && curve.resulting_points.length
+      ) {
+        const resulting = [...curve.resulting_points].sort((a, b) => a.discount_pct - b.discount_pct);
+        const resultingPath = svgElement("path", {
+          d: linePath(resulting.map((point) => [axes.x(point.discount_pct), axes.y(point.score)])),
+          class: "fp-chart-line is-resulting",
+        });
+        resultingPath.style.setProperty("--series-color", color);
+        nodes.chart.append(resultingPath);
+      }
     });
     result.rows.forEach((row) => {
       const selected = row.offer_id === selectedOfferId;
@@ -588,11 +666,20 @@
         y2: axes.margin.top + axes.plotHeight,
         class: `fp-offer-guide${selected ? " is-selected" : ""}`,
       }));
-      const hover = [
-        `${row.name} · ${euro.format(row.price)} · baja ${percent.format(row.discount_pct)} %`,
-        ...result.methods.map((method) => `${method.name}: ${summaryNumber.format(row.scores[method.method_id])} puntos`),
-      ].join("\n");
       result.methods.forEach((method) => {
+        const theoretical = row.theoretical_scores[method.method_id];
+        const difference = row.score_differences[method.method_id];
+        const hover = [
+          `${row.name} · ${euro.format(row.price)}`,
+          `Baja: ${percent.format(row.discount_pct)} %`,
+          `Puntuación real: ${summaryNumber.format(row.scores[method.method_id])} puntos`,
+          theoretical === null
+            ? "Puntuación teórica: fuera del dominio de la Bmax esperada"
+            : `Puntuación sobre la curva teórica: ${summaryNumber.format(theoretical)} puntos`,
+          difference === null
+            ? null
+            : `Diferencia: ${difference >= 0 ? "+" : "−"}${summaryNumber.format(Math.abs(difference))} puntos`,
+        ].filter(Boolean).join("\n");
         const point = svgElement("circle", {
           cx: axes.x(row.discount_pct),
           cy: axes.y(row.scores[method.method_id]),
@@ -629,7 +716,11 @@
       const parameterText = Object.entries(method.parameters).map(
         ([key, value]) => `${key} = ${window.FormulaFormat.parameterText(key, value)}`
       ).join(" · ");
-      body.append(equation, element("p", "", `${method.reference_type}${parameterText ? ` · ${parameterText}` : ""}`));
+      body.append(
+        equation,
+        element("p", "", `${method.reference_type}${parameterText ? ` · ${parameterText}` : ""}`),
+        element("p", "fp-small-copy", method.curve_explanation)
+      );
       details.append(summary, body);
       return details;
     }));
@@ -652,15 +743,22 @@
       nodes.selectedOffer.textContent = "Selecciona un punto LIC-n para fijar sus datos.";
       return;
     }
+    const focused = currentMethod(result);
+    const theoretical = row.theoretical_scores[focused.method_id];
+    const difference = row.score_differences[focused.method_id];
     nodes.selectedOffer.replaceChildren(
       element("strong", "", row.name),
       element("span", "", euro.format(row.price)),
       element("span", "", `Baja ${percent.format(row.discount_pct)} %`),
-      ...result.methods.map((method) => element(
+      element("span", "", `${focused.short_name} real: ${summaryNumber.format(row.scores[focused.method_id])} pt`),
+      element("span", "", theoretical === null
+        ? "Curva esperada: fuera de dominio"
+        : `Curva esperada: ${summaryNumber.format(theoretical)} pt`),
+      ...(difference === null ? [] : [element(
         "span",
         "",
-        `${method.short_name}: ${summaryNumber.format(row.scores[method.method_id])} pt`
-      ))
+        `Diferencia: ${difference >= 0 ? "+" : "−"}${summaryNumber.format(Math.abs(difference))} pt`
+      )])
     );
   };
 
@@ -706,8 +804,13 @@
     const ranking = rankedRows(result, method.method_id, rankingMode);
     const spread = ranking.length ? ranking[0].value - ranking.at(-1).value : 0;
     const impact = result.impacts.find((item) => item.method_id === method.method_id);
+    const bmaxDifference = result.scenario.bmax_difference_pp;
+    const bmaxConclusion = Math.abs(bmaxDifference) < 0.01
+      ? "La Bmax observada coincide con la hipótesis usada para estudiar la curva esperada."
+      : `La Bmax real fue del ${percent.format(result.scenario.maximum_discount_pct)} %, frente al ${summaryNumber.format(result.scenario.expected_maximum_discount_pct)} % supuesto. Esta diferencia ${method.depends_on_other_offers ? "modifica el comportamiento efectivo de la fórmula relativa o mixta." : "no altera esta fórmula absoluta."}`;
     const conclusions = profile === "empresa"
       ? [
+          bmaxConclusion,
           `${ranking[0]?.name || "La primera oferta"} encabeza la simulación con ${method.name}.`,
           spread < result.scenario.pmax * 0.1
             ? "Las puntuaciones están muy agrupadas; pequeñas diferencias técnicas pueden decidir la clasificación total."
@@ -718,6 +821,7 @@
           "Una baja sostenible debe contrastarse con costes y capacidad de ejecución, no sólo con la posición matemática.",
         ]
       : [
+          bmaxConclusion,
           spread < result.scenario.pmax * 0.1
             ? "La fórmula produce poca separación entre las ofertas económicas de este caso."
             : `La fórmula seleccionada separa en ${summaryNumber.format(spread)} puntos a los extremos de la clasificación.`,
@@ -735,6 +839,7 @@
   };
 
   const renderResult = (result) => {
+    renderBmaxControl(result);
     renderRankingFormula(result);
     renderPermanentResults(result);
     renderImpact(result);
@@ -753,6 +858,20 @@
   nodes.caseSelector.addEventListener("change", () => loadCase(nodes.caseSelector.value));
   nodes.tenderPrice.addEventListener("input", () => scheduleCompare());
   nodes.pmax.addEventListener("input", () => scheduleCompare());
+  const updateExpectedBmax = (raw) => {
+    const value = Number(raw);
+    if (!Number.isFinite(value) || value <= 0 || value >= 100) return;
+    expectedBmaxPct = value;
+    nodes.expectedBmax.value = String(Math.min(95, Math.max(5, value)));
+    nodes.expectedBmaxNumber.value = String(value);
+    renderBmaxControl();
+    scheduleCompare();
+  };
+  nodes.expectedBmax.addEventListener("input", () => updateExpectedBmax(nodes.expectedBmax.value));
+  nodes.expectedBmaxNumber.addEventListener("input", () => updateExpectedBmax(nodes.expectedBmaxNumber.value));
+  nodes.showResultingCurve.addEventListener("change", () => {
+    if (lastResult) renderChart(lastResult);
+  });
   $("#restore-case").addEventListener("click", restoreCase);
   $("#restore-case-secondary").addEventListener("click", restoreCase);
   $("#add-offer").addEventListener("click", () => {
@@ -814,6 +933,8 @@
     if (lastResult) {
       renderPermanentResults(lastResult);
       renderImpact(lastResult);
+      renderChart(lastResult);
+      renderSelectedOffer(lastResult);
       renderConclusions(lastResult);
     }
   });

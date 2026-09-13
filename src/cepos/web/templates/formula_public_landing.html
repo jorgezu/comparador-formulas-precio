@@ -66,11 +66,12 @@
         <a class="fp-button fp-button-outline" href="{{ lab_url }}">Entender las fórmulas</a>
       </div>
     </section>
+    {% if catalog.feedback_url %}<section class="fp-feedback-band fp-feedback-band-quiet"><div><p class="fp-kicker">Conversación abierta</p><p>Las observaciones profesionales ayudan a contrastar y mejorar la herramienta.</p></div><a class="fp-text-link" href="{{ catalog.feedback_urls.feedback }}" rel="noopener noreferrer">Opinar, proponer un caso o contactar</a></section>{% endif %}
   </main>
 
   <footer class="fp-footer">
     <p>Herramienta de análisis matemático. No sustituye el análisis jurídico de un expediente concreto.</p>
-    <p>Desarrollado por Jorge Cejudo Podio · {{ catalog.product_version }}</p>
+    <p>Desarrollado por Jorge Cejudo Podio · {{ catalog.release_label }}</p>
   </footer>
 </body>
 </html>

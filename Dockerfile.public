@@ -21,6 +21,7 @@ COPY src/cepos/formula_web /app/src/cepos/formula_web
 COPY src/cepos/web/templates/formula_public_landing.html /app/src/cepos/web/templates/formula_public_landing.html
 COPY src/cepos/web/templates/formula_analysis.html /app/src/cepos/web/templates/formula_analysis.html
 COPY src/cepos/web/templates/formula_lab.html /app/src/cepos/web/templates/formula_lab.html
+COPY src/cepos/web/templates/formula_contact.html /app/src/cepos/web/templates/formula_contact.html
 COPY src/cepos/web/static/formula-public.css /app/src/cepos/web/static/formula-public.css
 COPY src/cepos/web/static/formula-public-analysis.js /app/src/cepos/web/static/formula-public-analysis.js
 COPY src/cepos/web/static/formula-format.js /app/src/cepos/web/static/formula-format.js

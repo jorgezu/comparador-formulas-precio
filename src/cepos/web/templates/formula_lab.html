@@ -27,11 +27,14 @@
     <header class="fp-lab-intro">
       <p class="fp-kicker">Teoría antes del caso</p>
       <h1>Comprender cómo reparte puntos cada fórmula</h1>
-      <p>Estas curvas representan comportamiento teórico. Los casos reales pueden producir resultados diferentes cuando la fórmula depende de datos relativos del conjunto de ofertas.</p>
+      <p>La curva que se estudia antes de recibir ofertas parte de una hipótesis. Cuando la fórmula depende del conjunto, las referencias observadas pueden producir una curva efectiva diferente.</p>
       <div class="fp-theory-types">
-        <div><strong>Relativas</strong><span>La curva depende de Omin, Bmax u otros datos del conjunto.</span></div>
+        <div><strong>Relativas</strong><span>La curva depende de la oferta mínima, la baja máxima u otros datos del conjunto.</span></div>
         <div><strong>Absolutas</strong><span>Una misma baja mantiene su posición con parámetros fijos.</span></div>
         <div><strong>Umbrales</strong><span>La pendiente cambia a partir de una baja definida.</span></div>
+      </div>
+      <div class="fp-relation-strip" aria-label="Casos particulares entre fórmulas">
+        <span>Exponencial relativa</span><b>n = 1 ↓</b><strong>Lineal</strong><b>↑ k = 1</b><span>Raíz k-ésima</span>
       </div>
     </header>
 
@@ -48,8 +51,23 @@
           <a class="fp-button fp-button-outline" id="real-cases-link" href="{{ analyzer_url }}?perfil=administracion">Ver en casos reales</a>
         </div>
         <div class="fp-equation-display" id="lab-equation"></div>
+        <div class="fp-formula-taxonomy"><span>Familia: <strong id="lab-family"></strong></span><span>Grupo de equivalencia: <strong id="lab-equivalence-group"></strong></span></div>
+        <section class="fp-equivalent-forms" id="lab-equivalent-forms">
+          <div class="fp-equivalent-heading"><div><p class="fp-kicker">Formas equivalentes</p><h3>Misma fórmula, distinta expresión</h3></div><span>Las variables cambian; la relación matemática no.</span></div>
+          <div class="fp-equivalent-grid">
+            <article id="lab-offers-form"><h4>Expresión en ofertas</h4><div class="fp-equation-display" id="lab-equation-offers"></div></article>
+            <span class="fp-equivalent-arrow" aria-hidden="true">↔</span>
+            <article id="lab-discounts-form"><h4>Expresión en bajas</h4><div class="fp-equation-display" id="lab-equation-discounts"></div></article>
+          </div>
+        </section>
         <p class="fp-lab-description" id="lab-description"></p>
+        <div class="fp-bmax-lab-controls">
+          <label class="fp-lab-control"><span><span>Contexto orientativo</span></span><select id="lab-contract-type"><option value="OBRAS">Obras</option><option value="SUMINISTROS" selected>Suministros</option><option value="SERVICIOS">Servicios</option></select></label>
+          <label class="fp-lab-control"><span><span>Baja máxima esperada</span><strong id="lab-expected-bmax-value">30 %</strong></span><div><input id="lab-expected-bmax" type="range" min="5" max="95" step="5" value="30"><input id="lab-expected-bmax-number" type="number" min="0.01" max="99.99" step="5" value="30" inputmode="decimal" aria-label="Baja máxima esperada (valor)"></div><small>Hipótesis de trabajo, no dato real.</small></label>
+          <label class="fp-lab-control"><span><span>Baja máxima observada</span><strong id="lab-observed-bmax-value">20,00 %</strong></span><div><input id="lab-observed-bmax" type="range" min="0.01" max="99.99" step="0.01" value="20"><input id="lab-observed-bmax-number" type="number" min="0.01" max="99.99" step="0.01" value="20" inputmode="decimal" aria-label="Baja máxima observada (valor)"></div><small>Dato del escenario simulado.</small></label>
+        </div>
         <div class="fp-lab-controls" id="lab-controls"></div>
+        <label class="fp-check-control fp-lab-result-toggle"><input id="lab-show-resulting-curve" type="checkbox" checked> <span>Mostrar curva resultante</span></label>
         <div class="fp-status" id="lab-status" role="status" aria-live="polite">Calculando curva teórica…</div>
         <div class="fp-chart-wrap fp-lab-chart-wrap">
           <svg id="lab-chart" viewBox="0 0 920 480" role="img" aria-labelledby="lab-chart-title lab-chart-desc">
@@ -64,16 +82,18 @@
         <section><p class="fp-kicker">Dependencia</p><h3 id="lab-dependency"></h3><p id="lab-dependency-copy"></p></section>
         <section><p class="fp-kicker">Baja 0 %</p><h3 id="lab-zero-score"></h3><p id="lab-zero-copy"></p></section>
         <section><p class="fp-kicker">Particularidades</p><ul id="lab-particularities"></ul></section>
+        <section id="lab-special-cases-section"><p class="fp-kicker">Casos particulares</p><ul id="lab-special-cases"></ul></section>
         <section id="lab-equivalences-section"><p class="fp-kicker">Equivalencias verificadas</p><ul id="lab-equivalences"></ul></section>
       </aside>
     </section>
 
     <section class="fp-formula-reference" aria-labelledby="catalog-title">
-      <div><p class="fp-kicker">FORMULA_CANONICAL_CATALOG_V1</p><h2 id="catalog-title">Catálogo canónico revisado</h2><p>Nombres públicos, ecuaciones y propiedades contrastados con la implementación actual. Las discrepancias se conservan como asuntos de validación, no se corrigen por intuición.</p></div>
+      <div><p class="fp-kicker">Catálogo matemático</p><h2 id="catalog-title">Catálogo canónico revisado</h2><p>Nombres públicos, ecuaciones y propiedades contrastados con la implementación actual. Las discrepancias se conservan como asuntos de validación, no se corrigen por intuición.</p></div>
       <div id="canonical-cards" class="fp-canonical-grid"></div>
     </section>
+    {% if catalog.feedback_url %}<section class="fp-feedback-band"><div><p class="fp-kicker">Participar</p><h2>¿Conoces otra fórmula? Proponla</h2><p>Seguimos probando nuevas fórmulas y variantes, tanto propias como utilizadas en otras licitaciones.</p></div><div class="fp-cta-actions"><a class="fp-button fp-button-outline" href="{{ catalog.feedback_urls.feedback }}" rel="noopener noreferrer">¿Has detectado una discrepancia? Cuéntanoslo</a><a class="fp-button fp-button-primary" href="{{ catalog.feedback_urls.formula }}" rel="noopener noreferrer">Proponer una fórmula</a></div></section>{% endif %}
   </main>
 
-  <footer class="fp-footer"><p>Las curvas del laboratorio se calculan con el mismo backend validado que los casos reales.</p><p>{{ catalog.canonical_catalog_version }}</p></footer>
+  <footer class="fp-footer"><p>Las curvas del laboratorio se calculan con el mismo backend validado que los casos reales.</p><p>{{ catalog.release_label }}</p></footer>
 </body>
 </html>

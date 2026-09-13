@@ -35,13 +35,16 @@ docker run --rm -p 8000:8000 -e FORMULA_PUBLIC_ALLOWED_HOSTS=localhost,127.0.0.1
 | `PORT` | No | Puerto HTTP. Por defecto `8000`. |
 | `FORMULA_LINKEDIN_URL` | No | Enlace público de LinkedIn del autor. |
 | `FORMULA_WEBSITE_URL` | No | Web pública del autor. |
-| `FORMULA_FEEDBACK_URL` | No | URL `https://` o `mailto:` para comentarios. |
+| `FORMULA_FEEDBACK_URL` | No | Ruta relativa o URL externa `https://` para los enlaces de contacto. Por defecto, `/contacto`. |
+| `RESEND_API_KEY` | Para enviar el formulario | Clave privada de la API de Resend. |
+| `FORMULA_FEEDBACK_EMAIL` | Para enviar el formulario | Dirección receptora, sólo disponible en el servidor. |
+| `FORMULA_FEEDBACK_FROM` | Para enviar el formulario | Remitente verificado en Resend. |
 
-Si no se configuran los enlaces opcionales, no se muestran en la interfaz. Ninguna variable secreta es necesaria para ejecutar la herramienta.
+La ausencia de las variables de Resend no impide ejecutar la herramienta ni abrir el formulario: el envío devuelve un estado controlado de servicio no configurado. Los valores sensibles deben configurarse manualmente en Render y nunca guardarse en Git.
 
 ## Privacidad y aislamiento
 
 - Los escenarios se calculan en memoria y no se persisten.
-- No hay rastreadores, cookies ni llamadas a terceros.
-- El servidor sólo expone la herramienta, su API de cálculo, dos archivos estáticos y `/health`.
+- No hay rastreadores ni cookies. Resend sólo recibe los datos cuando el usuario envía voluntariamente el formulario.
+- El servidor expone la herramienta, el formulario de contacto, la API de cálculo, los recursos estáticos autorizados y `/health`.
 - No incluye CePOS Manager, bases de datos, índices, documentos privados ni rutas locales.

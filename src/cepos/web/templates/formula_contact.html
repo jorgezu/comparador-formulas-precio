@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="description" content="Contacta con TenderLab para opinar, proponer una fórmula o solicitar un análisis.">
+  <title>Contacto · TenderLab</title>
+  <link rel="stylesheet" href="{{ stylesheet_url }}">
+</head>
+<body class="fp-body fp-contact-page">
+  <header class="fp-topbar">
+    <a class="fp-product" href="{{ home_url }}" aria-label="Volver al inicio">
+      <span class="fp-product-mark" aria-hidden="true">f(x)</span>
+      <span><strong>TenderLab</strong><small>Fórmulas de Valoración</small></span>
+    </a>
+    <nav class="fp-nav" aria-label="Navegación principal">
+      <a href="{{ analyzer_url }}?perfil=administracion">Analizador</a>
+      <a href="{{ lab_url }}">Laboratorio</a>
+    </nav>
+  </header>
+
+  <main class="fp-contact-shell">
+    {% if success %}
+      <section class="fp-contact-success" aria-labelledby="contact-title">
+        <p class="fp-kicker">Mensaje enviado</p>
+        <h1 id="contact-title">Gracias. Hemos recibido tu mensaje.</h1>
+        <p>Revisaremos la información facilitada y responderemos cuando sea necesario y dispongamos de un email de contacto.</p>
+        <div class="fp-contact-return-links">
+          <a class="fp-button fp-button-primary" href="{{ analyzer_url }}?perfil=administracion">Volver al Analizador</a>
+          <a class="fp-button fp-button-outline" href="{{ lab_url }}">Volver al Laboratorio</a>
+          <a class="fp-text-link" href="{{ home_url }}">Volver al inicio</a>
+        </div>
+      </section>
+    {% else %}
+      <header class="fp-contact-intro">
+        <p class="fp-kicker">Contacto</p>
+        <h1 id="contact-title">Cuéntanos qué quieres analizar o mejorar</h1>
+        <p>Puedes señalar una discrepancia, proponer una fórmula o un caso real, o solicitar un análisis de tu licitación.</p>
+      </header>
+
+      {% if form_error %}<div class="fp-contact-alert" role="alert">{{ form_error }}</div>{% endif %}
+      {% if not delivery_configured %}<div class="fp-contact-notice" role="status">El envío todavía no está configurado en este entorno. Puedes revisar y completar el formulario, pero no se enviará hasta configurar el servicio.</div>{% endif %}
+
+      <form class="fp-contact-form" method="post" action="/contacto" novalidate>
+        <input type="hidden" name="origin" value="{{ values.origin }}">
+        <div class="fp-honeypot" aria-hidden="true">
+          <label for="contact-website">No completar este campo</label>
+          <input id="contact-website" name="website" type="text" tabindex="-1" autocomplete="off">
+        </div>
+
+        <label class="fp-contact-field">
+          <span>Nombre <small>Opcional</small></span>
+          <input name="name" type="text" maxlength="100" autocomplete="name" value="{{ values.name }}" aria-invalid="{{ 'true' if errors.name else 'false' }}">
+          {% if errors.name %}<em>{{ errors.name }}</em>{% endif %}
+        </label>
+
+        <label class="fp-contact-field">
+          <span>Email <small>Opcional; necesario si deseas respuesta</small></span>
+          <input name="email" type="email" maxlength="254" autocomplete="email" value="{{ values.email }}" aria-invalid="{{ 'true' if errors.email else 'false' }}">
+          {% if errors.email %}<em>{{ errors.email }}</em>{% endif %}
+        </label>
+
+        <div class="fp-contact-grid">
+          <label class="fp-contact-field">
+            <span>Perfil</span>
+            <select name="profile" required aria-invalid="{{ 'true' if errors.profile else 'false' }}">
+              {% for value, label in profile_options %}<option value="{{ value }}"{% if values.profile == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
+            </select>
+            {% if errors.profile %}<em>{{ errors.profile }}</em>{% endif %}
+          </label>
+
+          <label class="fp-contact-field">
+            <span>Motivo</span>
+            <select name="reason" required aria-invalid="{{ 'true' if errors.reason else 'false' }}">
+              {% for value, label in reason_options %}<option value="{{ value }}"{% if values.reason == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
+            </select>
+            {% if errors.reason %}<em>{{ errors.reason }}</em>{% endif %}
+          </label>
+        </div>
+
+        <label class="fp-contact-field">
+          <span>Mensaje</span>
+          <textarea name="message" rows="8" maxlength="5000" required aria-invalid="{{ 'true' if errors.message else 'false' }}">{{ values.message }}</textarea>
+          {% if errors.message %}<em>{{ errors.message }}</em>{% endif %}
+        </label>
+
+        <label class="fp-contact-field">
+          <span>Enlace al expediente / pliego <small>Opcional</small></span>
+          <input name="reference_url" type="url" maxlength="2000" inputmode="url" placeholder="https://…" value="{{ values.reference_url }}" aria-invalid="{{ 'true' if errors.reference_url else 'false' }}">
+          {% if errors.reference_url %}<em>{{ errors.reference_url }}</em>{% endif %}
+        </label>
+
+        <p class="fp-contact-privacy">Los datos enviados se utilizarán únicamente para responder o valorar la propuesta realizada.</p>
+        <div class="fp-contact-actions">
+          <button class="fp-button fp-button-primary" type="submit">Enviar mensaje</button>
+          <a class="fp-button fp-button-outline" href="{{ home_url }}">Cancelar</a>
+        </div>
+      </form>
+    {% endif %}
+  </main>
+
+  <footer class="fp-footer"><p>TenderLab · Herramienta de análisis matemático</p><p>{{ release_label }}</p></footer>
+</body>
+</html>

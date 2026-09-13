@@ -17,8 +17,23 @@
     type: $("#lab-type"),
     title: $("#lab-title"),
     equation: $("#lab-equation"),
+    family: $("#lab-family"),
+    equivalenceGroup: $("#lab-equivalence-group"),
+    equivalentForms: $("#lab-equivalent-forms"),
+    offersForm: $("#lab-offers-form"),
+    discountsForm: $("#lab-discounts-form"),
+    equationOffers: $("#lab-equation-offers"),
+    equationDiscounts: $("#lab-equation-discounts"),
     description: $("#lab-description"),
     controls: $("#lab-controls"),
+    contractType: $("#lab-contract-type"),
+    expectedBmax: $("#lab-expected-bmax"),
+    expectedBmaxNumber: $("#lab-expected-bmax-number"),
+    expectedBmaxValue: $("#lab-expected-bmax-value"),
+    observedBmax: $("#lab-observed-bmax"),
+    observedBmaxNumber: $("#lab-observed-bmax-number"),
+    observedBmaxValue: $("#lab-observed-bmax-value"),
+    showResultingCurve: $("#lab-show-resulting-curve"),
     status: $("#lab-status"),
     chart: $("#lab-chart"),
     legend: $("#lab-legend"),
@@ -29,6 +44,8 @@
     particularities: $("#lab-particularities"),
     equivalences: $("#lab-equivalences"),
     equivalencesSection: $("#lab-equivalences-section"),
+    specialCases: $("#lab-special-cases"),
+    specialCasesSection: $("#lab-special-cases-section"),
     realCasesLink: $("#real-cases-link"),
     canonicalCards: $("#canonical-cards"),
   };
@@ -36,6 +53,8 @@
   let selectedMethodId = null;
   let customParameters = {};
   let requestSequence = 0;
+  let expectedBmaxPct = 30;
+  let observedBmaxPct = 20;
 
   const element = (name, className = "", text) => {
     const node = document.createElement(name);
@@ -50,8 +69,8 @@
     return node;
   };
 
-  const evenlySpacedOffers = () => Array.from({ length: 20 }, (_, index) => {
-    const discount = 30 * index / 19;
+  const evenlySpacedOffers = (maximumDiscountPct) => Array.from({ length: 20 }, (_, index) => {
+    const discount = maximumDiscountPct * index / 19;
     return {
       offer_id: `theory-${index + 1}`,
       name: `B${index + 1}`,
@@ -101,7 +120,8 @@
       body: JSON.stringify({
         tender_price: 100,
         pmax: 100,
-        offers: evenlySpacedOffers(),
+        offers: evenlySpacedOffers(observedBmaxPct),
+        expected_maximum_discount_pct: expectedBmaxPct,
         methods: [series.selection],
       }),
     });
@@ -131,10 +151,11 @@
     const margin = { left: 70, right: 24, top: 25, bottom: 58 };
     const plotWidth = width - margin.left - margin.right;
     const plotHeight = height - margin.top - margin.bottom;
-    const x = (value) => margin.left + value / 30 * plotWidth;
+    const xMax = series[0].result.scenario.visual_maximum_discount_pct;
+    const x = (value) => margin.left + value / xMax * plotWidth;
     const y = (value) => margin.top + plotHeight - value / 100 * plotHeight;
     for (let index = 0; index <= 5; index += 1) {
-      const xValue = 30 * index / 5;
+      const xValue = xMax * index / 5;
       const yValue = 100 * index / 5;
       nodes.chart.append(
         svgElement("line", { x1: x(xValue), y1: margin.top, x2: x(xValue), y2: margin.top + plotHeight, class: "fp-chart-grid" }),
@@ -153,13 +174,22 @@
     nodes.chart.append(yLabel);
     series.forEach((item, index) => {
       const color = baseColors[index % baseColors.length];
-      const points = [...item.curve.points].sort((a, b) => a.discount_pct - b.discount_pct);
+      const points = [...item.curve.expected_points].sort((a, b) => a.discount_pct - b.discount_pct);
       const path = svgElement("path", {
         d: linePath(points.map((point) => [x(point.discount_pct), y(point.score_pct)])),
         class: "fp-chart-line",
       });
       path.style.setProperty("--series-color", color);
       nodes.chart.append(path);
+      if (nodes.showResultingCurve.checked && !item.curve.curves_coincide) {
+        const resulting = [...item.curve.resulting_points].sort((a, b) => a.discount_pct - b.discount_pct);
+        const resultingPath = svgElement("path", {
+          d: linePath(resulting.map((point) => [x(point.discount_pct), y(point.score_pct)])),
+          class: "fp-chart-line is-resulting",
+        });
+        resultingPath.style.setProperty("--series-color", color);
+        nodes.chart.append(resultingPath);
+      }
       const zero = points.reduce((best, point) => Math.abs(point.discount_pct) < Math.abs(best.discount_pct) ? point : best, points[0]);
       const zeroPoint = svgElement("circle", { cx: x(zero.discount_pct), cy: y(zero.score_pct), r: 6, class: "fp-chart-point fp-zero-point" });
       zeroPoint.style.setProperty("--series-color", color);
@@ -171,7 +201,10 @@
     nodes.legend.replaceChildren(...series.map((item, index) => {
       const legend = element("span", "fp-legend-item");
       legend.style.setProperty("--series-color", baseColors[index % baseColors.length]);
-      legend.append(element("i", "fp-series-swatch"), element("span", "", item.label));
+      legend.append(
+        element("i", "fp-series-swatch"),
+        element("span", "", `${item.label} · continua esperada${item.curve.curves_coincide ? " = resultante" : nodes.showResultingCurve.checked ? " · discontinua resultante" : ""}`)
+      );
       return legend;
     }));
   };
@@ -190,6 +223,8 @@
     nodes.zeroScore.classList.toggle("is-alert", zero.score_pct > 1e-8);
     nodes.zeroCopy.textContent = method.zero_discount_behavior;
     nodes.particularities.replaceChildren(...method.particularities.map((item) => element("li", "", item)));
+    nodes.specialCasesSection.hidden = !method.special_cases.length;
+    nodes.specialCases.replaceChildren(...method.special_cases.map((item) => element("li", "", item)));
     nodes.equivalencesSection.hidden = !method.verified_equivalences.length;
     nodes.equivalences.replaceChildren(...method.verified_equivalences.map((item) => element("li", "", item)));
   };
@@ -204,13 +239,36 @@
       if (sequence !== requestSequence) return;
       drawChart(series);
       renderTheoryNotes(method, series);
-      nodes.status.textContent = `${series.length} curva${series.length === 1 ? "" : "s"} · escenario teórico de 0 % a 30 % de baja`;
+      nodes.status.textContent = `${series.length} curva${series.length === 1 ? "" : "s"} · baja máxima esperada ${percent.format(expectedBmaxPct)} % · observada ${percent.format(observedBmaxPct)} %`;
       nodes.status.className = "fp-status";
     } catch (error) {
       if (sequence !== requestSequence) return;
       nodes.status.textContent = error.message;
       nodes.status.className = "fp-status is-error";
     }
+  };
+
+  const scheduleCalculation = () => {
+    window.clearTimeout(scheduleCalculation.timer);
+    scheduleCalculation.timer = window.setTimeout(calculate, 180);
+  };
+
+  const syncBmaxControls = () => {
+    nodes.expectedBmax.value = String(Math.min(95, Math.max(5, expectedBmaxPct)));
+    nodes.expectedBmaxNumber.value = String(expectedBmaxPct);
+    nodes.expectedBmaxValue.textContent = `${percent.format(expectedBmaxPct)} %`;
+    nodes.observedBmax.value = String(observedBmaxPct);
+    nodes.observedBmaxNumber.value = String(observedBmaxPct);
+    nodes.observedBmaxValue.textContent = `${percent.format(observedBmaxPct)} %`;
+  };
+
+  const updateBmax = (kind, raw) => {
+    const value = Number(raw);
+    if (!Number.isFinite(value) || value <= 0 || value >= 100) return;
+    if (kind === "expected") expectedBmaxPct = value;
+    else observedBmaxPct = value;
+    syncBmaxControls();
+    scheduleCalculation();
   };
 
   const renderControls = (method) => {
@@ -263,6 +321,13 @@
     nodes.type.className = `fp-type-badge is-${method.reference_type.toLowerCase()}`;
     nodes.title.textContent = method.name;
     nodes.equation.innerHTML = method.equation_mathml;
+    nodes.family.textContent = method.family;
+    nodes.equivalenceGroup.textContent = method.equivalence_group;
+    nodes.offersForm.hidden = !method.equation_offers_mathml;
+    nodes.discountsForm.hidden = !method.equation_discounts_mathml;
+    nodes.equationOffers.innerHTML = method.equation_offers_mathml || "";
+    nodes.equationDiscounts.innerHTML = method.equation_discounts_mathml || "";
+    nodes.equivalentForms.hidden = !(method.equation_offers_mathml && method.equation_discounts_mathml);
     nodes.description.textContent = method.description;
     nodes.realCasesLink.href = `${catalog.analyzer_url}?perfil=administracion&formula=${method.method_id}`;
     nodes.methodList.querySelectorAll("button").forEach((button) => {
@@ -294,7 +359,32 @@
       const body = element("div", "fp-canonical-body");
       const equation = element("div", "fp-equation-display");
       equation.innerHTML = method.equation_mathml;
-      body.append(equation, element("p", "", method.description));
+      body.append(
+        element("p", "fp-canonical-family", `Familia: ${method.family}`),
+        equation,
+        element("p", "", method.description)
+      );
+      if (method.equation_offers_mathml && method.equation_discounts_mathml) {
+        const forms = element("div", "fp-canonical-equivalents");
+        const offers = element("div");
+        offers.append(element("h4", "", "En ofertas"));
+        const offersEquation = element("div", "fp-equation-display");
+        offersEquation.innerHTML = method.equation_offers_mathml;
+        offers.append(offersEquation);
+        const discounts = element("div");
+        discounts.append(element("h4", "", "En bajas"));
+        const discountsEquation = element("div", "fp-equation-display");
+        discountsEquation.innerHTML = method.equation_discounts_mathml;
+        discounts.append(discountsEquation);
+        forms.append(offers, discounts);
+        body.append(element("h4", "", `Grupo de equivalencia · ${method.equivalence_group}`), forms);
+      }
+      if (method.special_cases.length) {
+        body.append(element("h4", "", "Casos particulares"));
+        const list = element("ul");
+        list.append(...method.special_cases.map((item) => element("li", "", item)));
+        body.append(list);
+      }
       if (method.discrepancies.length) {
         body.append(element("h4", "", "Pendiente de validación documental"));
         const list = element("ul");
@@ -318,6 +408,17 @@
     nodes.methodList.append(button);
   });
   nodes.method.addEventListener("change", () => selectMethod(nodes.method.value));
+  nodes.contractType.addEventListener("change", () => {
+    expectedBmaxPct = Number(catalog.theoretical_bmax_defaults[nodes.contractType.value]);
+    syncBmaxControls();
+    calculate();
+  });
+  nodes.expectedBmax.addEventListener("input", () => updateBmax("expected", nodes.expectedBmax.value));
+  nodes.expectedBmaxNumber.addEventListener("input", () => updateBmax("expected", nodes.expectedBmaxNumber.value));
+  nodes.observedBmax.addEventListener("input", () => updateBmax("observed", nodes.observedBmax.value));
+  nodes.observedBmaxNumber.addEventListener("input", () => updateBmax("observed", nodes.observedBmaxNumber.value));
+  nodes.showResultingCurve.addEventListener("change", calculate);
+  syncBmaxControls();
   renderCanonicalCatalog();
   selectMethod(window.location.hash.slice(1));
 })();

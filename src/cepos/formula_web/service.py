@@ -8,6 +8,7 @@ import math
 import os
 from pathlib import Path
 from typing import Any, Mapping, Sequence
+from urllib.parse import urlsplit
 
 from cepos.formula_simulation import (
     FormulaComparisonEngine,
@@ -29,6 +30,13 @@ PUBLIC_CASES_PATH = Path(__file__).resolve().parent / "artifacts/formula_public_
 CANONICAL_CATALOG_PATH = (
     Path(__file__).resolve().parent / "artifacts/formula_canonical_catalog_v1.json"
 )
+
+THEORETICAL_BMAX_DEFAULTS = {
+    "OBRAS": 15.0,
+    "SUMINISTROS": 30.0,
+    "SERVICIOS": 40.0,
+}
+CURVE_POINT_COUNT = 101
 
 
 PUBLIC_METHODS: dict[str, dict[str, Any]] = {
@@ -114,26 +122,25 @@ PUBLIC_METHODS: dict[str, dict[str, Any]] = {
 
 PARAMETER_FIELDS: dict[str, tuple[dict[str, Any], ...]] = {
     "NORMALIZED_PRICE_GAP_POWER": (
-        {"name": "n", "label": "Exponente n", "min": 0.01, "max": 100.0, "step": 0.1},
+        {"name": "n", "label": "Exponente n", "min": 0.01, "max": 100.0, "step": 0.01},
     ),
     "DISCOUNT_MAX_POWER": (
-        {"name": "n", "label": "Exponente n", "min": 0.01, "max": 100.0, "step": 0.01},
+        {"name": "k", "label": "Índice de la raíz k", "min": 0.01, "max": 100.0, "step": 0.01},
     ),
     "EXPONENTIAL_SATURATING_DISCOUNT": (
         {"name": "k", "label": "Coeficiente k", "min": 0.001, "max": 10.0, "step": 0.001},
     ),
     "DISCOUNT_THRESHOLD_TWO_SEGMENTS": (
-        {"name": "first_slope", "label": "Pendiente inicial", "min": 0.01, "max": 100.0, "step": 0.1},
+        {"name": "n", "label": "Pendiente inicial n", "min": 0.01, "max": 100.0, "step": 0.01},
         {
-            "name": "threshold",
-            "label": "Umbral de baja",
+            "name": "B",
+            "label": "Umbral de baja B",
             "suffix": "%",
-            "display_factor": 100.0,
             "min": 0.01,
             "max": 99.99,
-            "step": 0.1,
+            "step": 0.01,
         },
-        {"name": "tail_points", "label": "Puntos del tramo final", "min": 0.01, "max": 100.0, "step": 0.1},
+        {"name": "k", "label": "Puntos del tramo final k", "min": 0.01, "max": 100.0, "step": 0.01},
     ),
 }
 
@@ -214,6 +221,13 @@ class FormulaPriceComparatorService:
                     "expression": method.expression,
                     "equation_plain": public["equation_plain"],
                     "equation_mathml": public["equation_mathml"],
+                    "equation_offers_plain": public["equation_offers_plain"],
+                    "equation_offers_mathml": public["equation_offers_mathml"],
+                    "equation_discounts_plain": public["equation_discounts_plain"],
+                    "equation_discounts_mathml": public["equation_discounts_mathml"],
+                    "family": public["family"],
+                    "equivalence_group": public["equivalence_group"],
+                    "special_cases": list(public["special_cases"]),
                     "depends_on_other_offers": bool(method.set_dependencies),
                     "dependency": public["dependency"],
                     "behavior": public["behavior"],
@@ -230,19 +244,34 @@ class FormulaPriceComparatorService:
                             "variant_id": variant_id,
                             "label": self._variant_label(method_id, definition.parameters),
                             "origin": "DOCUMENTED",
-                            "parameters": dict(definition.parameters),
+                            "parameters": self._public_parameters(
+                                method_id, definition.parameters
+                            ),
+                            "dynamic": False,
                         }
                         for variant_id, definition in variants
-                    ],
+                    ] + (
+                        [
+                            {
+                                "variant_id": "bmax-over-5",
+                                "label": "n = Bmax / 5 · autoajustada",
+                                "origin": "BMAX_DERIVED",
+                                "parameters": {},
+                                "dynamic": True,
+                            }
+                        ]
+                        if method_id == "NORMALIZED_PRICE_GAP_POWER"
+                        else []
+                    ),
                     "parameter_fields": [dict(item) for item in PARAMETER_FIELDS.get(method_id, ())],
                 }
             )
         return {
             "product_version": PRODUCT_VERSION,
             "engine_version": SIMULATION_VERSION,
-            "canonical_catalog_version": "FORMULA_CANONICAL_CATALOG_V1",
+            "canonical_catalog_version": "FORMULA_CANONICAL_CATALOG_V2",
             "title": str(self.config["title"]),
-            "feedback_url": self._configured_url("FORMULA_FEEDBACK_URL", "feedback_url"),
+            "feedback_url": self._feedback_url(),
             "author": {
                 "name": str(self.config.get("author", {}).get("name", "Jorge Cejudo Podio")),
                 "linkedin_url": self._configured_url(
@@ -253,8 +282,9 @@ class FormulaPriceComparatorService:
                 ),
             },
             "max_offers": int(self.config.get("max_offers", 20)),
+            "theoretical_bmax_defaults": dict(THEORETICAL_BMAX_DEFAULTS),
             "demo": self.config["demo"],
-            "cases": self.case_catalog.cases(),
+            "cases": self._public_cases(),
             "methods": methods,
         }
 
@@ -263,14 +293,30 @@ class FormulaPriceComparatorService:
             raise FormulaWebInputError("La solicitud debe ser un objeto JSON.")
         self._reject_unknown_keys(
             payload,
-            {"tender_price", "pmax", "offers", "methods", "baseline"},
+            {
+                "tender_price",
+                "pmax",
+                "offers",
+                "methods",
+                "baseline",
+                "expected_maximum_discount_pct",
+            },
             "La solicitud contiene campos no admitidos.",
         )
         scenario, offer_names = self._scenario(
             {key: payload[key] for key in ("tender_price", "pmax", "offers") if key in payload},
             "CURRENT",
         )
-        selected = self._selected_methods(payload.get("methods"))
+        expected_bmax_pct = self._expected_bmax(
+            payload.get("expected_maximum_discount_pct", 30.0)
+        )
+        observed_bmax_pct = max(
+            (scenario.tender_price - value) / scenario.tender_price * 100.0
+            for value in scenario.offers
+        )
+        selected = self._selected_methods(
+            payload.get("methods"), observed_bmax_pct=observed_bmax_pct
+        )
         comparison = self.comparison_engine.compare(
             tuple(definition for _, definition, _ in selected), scenario
         )
@@ -283,6 +329,12 @@ class FormulaPriceComparatorService:
             self._public_result(method_id, definition, variant, simulations[method_id], metrics[method_id])
             for method_id, definition, variant in selected
         ]
+        visual_bmax_pct = self._visual_bmax(expected_bmax_pct, observed_bmax_pct)
+        public_methods = [
+            self._with_curve_role(method) for method in public_methods
+        ]
+        rows = self._table_rows(scenario, offer_names, public_methods)
+        self._add_theoretical_scores(rows, scenario, selected, expected_bmax_pct)
         result = {
             "product_version": PRODUCT_VERSION,
             "engine_version": SIMULATION_VERSION,
@@ -291,15 +343,23 @@ class FormulaPriceComparatorService:
                 "pmax": scenario.pmax,
                 "offer_count": len(scenario.offers),
                 "minimum_offer": min(scenario.offers),
-                "maximum_discount_pct": max(
-                    (scenario.tender_price - value) / scenario.tender_price * 100.0
-                    for value in scenario.offers
-                ),
+                "maximum_discount_pct": observed_bmax_pct,
+                "expected_maximum_discount_pct": expected_bmax_pct,
+                "bmax_difference_pp": observed_bmax_pct - expected_bmax_pct,
+                "visual_maximum_discount_pct": visual_bmax_pct,
             },
             "methods": public_methods,
-            "rows": self._table_rows(scenario, offer_names, public_methods),
-            "curves": self._curves(scenario, selected),
-            "variant_comparisons": self._variant_comparisons(scenario, selected),
+            "rows": rows,
+            "curves": self._curves(
+                scenario,
+                selected,
+                expected_bmax_pct=expected_bmax_pct,
+                observed_bmax_pct=observed_bmax_pct,
+                visual_bmax_pct=visual_bmax_pct,
+            ),
+            "variant_comparisons": self._variant_comparisons(
+                scenario, selected, expected_bmax_pct
+            ),
             "impacts": [],
             "change_context": None,
         }
@@ -326,7 +386,7 @@ class FormulaPriceComparatorService:
         )
 
     def _selected_methods(
-        self, raw_selections: Any
+        self, raw_selections: Any, *, observed_bmax_pct: float | None = None
     ) -> tuple[tuple[str, MethodDefinition, dict[str, Any]], ...]:
         if not isinstance(raw_selections, list) or not raw_selections:
             raise FormulaWebInputError("Selecciona al menos una fórmula.")
@@ -352,7 +412,26 @@ class FormulaPriceComparatorService:
             if not isinstance(variant_id, str):
                 raise FormulaWebInputError("La variante seleccionada no es válida.")
             options = dict(self.variant_definitions[method_id])
-            if variant_id == "custom":
+            if (
+                method_id == "NORMALIZED_PRICE_GAP_POWER"
+                and variant_id == "bmax-over-5"
+            ):
+                if "parameters" in raw:
+                    raise FormulaWebInputError(
+                        "La variante autoajustada no admite parámetros libres."
+                    )
+                if observed_bmax_pct is None:
+                    raise FormulaWebInputError(
+                        "La variante autoajustada necesita una Bmax observada."
+                    )
+                definition = replace(
+                    self.methods[method_id],
+                    parameters={"n": observed_bmax_pct / 5.0},
+                    parameter_origin="BMAX_DERIVED",
+                    sources=(),
+                )
+                variant = {"variant_id": variant_id, "origin": "BMAX_DERIVED"}
+            elif variant_id == "custom":
                 fields = PARAMETER_FIELDS.get(method_id, ())
                 if not fields:
                     raise FormulaWebInputError("Esta fórmula no admite parámetros libres.")
@@ -392,7 +471,7 @@ class FormulaPriceComparatorService:
                     parameters[name] = value
                 definition = replace(
                     self.methods[method_id],
-                    parameters=parameters,
+                    parameters=self._engine_parameters(method_id, parameters),
                     parameter_origin="USER_DEFINED",
                     sources=(),
                 )
@@ -503,6 +582,28 @@ class FormulaPriceComparatorService:
             raise ValueError(f"Invalid public URL configured for {key}")
         return raw
 
+    @staticmethod
+    def _feedback_url() -> str:
+        raw = os.environ.get("FORMULA_FEEDBACK_URL", "").strip()
+        if not raw:
+            return "/contacto"
+        parsed = urlsplit(raw)
+        relative = (
+            raw.startswith("/")
+            and not raw.startswith("//")
+            and not parsed.scheme
+            and not parsed.netloc
+        )
+        external = (
+            parsed.scheme == "https"
+            and bool(parsed.netloc)
+            and parsed.username is None
+            and parsed.password is None
+        )
+        if not relative and not external:
+            raise ValueError("Invalid public URL configured for feedback_url")
+        return raw
+
     def _public_result(
         self,
         method_id: str,
@@ -520,11 +621,20 @@ class FormulaPriceComparatorService:
             "expression": definition.expression,
             "equation_plain": public["equation_plain"],
             "equation_mathml": public["equation_mathml"],
-            "parameters": dict(definition.parameters),
+            "equation_offers_plain": public["equation_offers_plain"],
+            "equation_offers_mathml": public["equation_offers_mathml"],
+            "equation_discounts_plain": public["equation_discounts_plain"],
+            "equation_discounts_mathml": public["equation_discounts_mathml"],
+            "family": public["family"],
+            "equivalence_group": public["equivalence_group"],
+            "special_cases": list(public["special_cases"]),
+            "parameters": self._public_parameters(method_id, definition.parameters),
             "parameter_origin": variant["origin"],
             "variant_label": (
                 "Valores introducidos por el usuario"
                 if variant["origin"] == "USER_DEFINED"
+                else "n = Bmax / 5 · autoajustada"
+                if variant["origin"] == "BMAX_DERIVED"
                 else self._variant_label(method_id, definition.parameters)
             ),
             "depends_on_other_offers": bool(definition.set_dependencies),
@@ -581,34 +691,50 @@ class FormulaPriceComparatorService:
         self,
         scenario: Scenario,
         selected: Sequence[tuple[str, MethodDefinition, Mapping[str, Any]]],
+        *,
+        expected_bmax_pct: float,
+        observed_bmax_pct: float,
+        visual_bmax_pct: float,
     ) -> list[dict[str, Any]]:
-        prices = self._curve_prices(scenario)
-        ids = tuple(f"curve-{index}" for index in range(len(prices)))
         curves = []
-        for method_id, definition, _ in selected:
-            simulation = self.simulation_engine.evaluate_method(
-                definition,
-                scenario.tender_price,
-                prices,
-                scenario.pmax,
-                scenario_id="CURVE",
-                offer_ids=ids,
+        for method_id, definition, variant in selected:
+            is_absolute = not definition.set_dependencies
+            expected_limit = visual_bmax_pct if is_absolute else expected_bmax_pct
+            expected_definition = self._definition_for_reference(
+                definition, variant, expected_bmax_pct
             )
-            if simulation.status != "SIMULATION_OK":
+            expected_points = self._curve_points(
+                scenario,
+                expected_definition,
+                expected_limit,
+                scenario_id="EXPECTED_CURVE",
+            )
+            if not expected_points:
                 continue
+            resulting_points = []
+            if not is_absolute:
+                resulting_points = self._curve_points(
+                    scenario,
+                    definition,
+                    observed_bmax_pct,
+                    scenario_id="RESULTING_CURVE",
+                )
             curves.append(
                 {
                     "method_id": method_id,
                     "name": self.public_methods[method_id]["short_name"],
-                    "points": [
-                        {
-                            "price": row.price,
-                            "discount_pct": row.discount_rate * 100.0,
-                            "score": row.score,
-                            "score_pct": row.score_normalized * 100.0,
-                        }
-                        for row in sorted(simulation.rows, key=lambda item: item.price)
-                    ],
+                    "points": expected_points,
+                    "expected_points": expected_points,
+                    "resulting_points": resulting_points,
+                    "curves_coincide": is_absolute,
+                    "expected_reference_pct": expected_bmax_pct,
+                    "observed_reference_pct": observed_bmax_pct,
+                    "expected_parameters": self._public_parameters(
+                        method_id, expected_definition.parameters
+                    ),
+                    "resulting_parameters": self._public_parameters(
+                        method_id, definition.parameters
+                    ),
                 }
             )
         return curves
@@ -617,8 +743,9 @@ class FormulaPriceComparatorService:
         self,
         scenario: Scenario,
         selected: Sequence[tuple[str, MethodDefinition, Mapping[str, Any]]],
+        expected_bmax_pct: float,
     ) -> list[dict[str, Any]]:
-        prices = self._curve_prices(scenario)
+        prices = self._curve_prices(scenario, expected_bmax_pct)
         ids = tuple(f"variant-{index}" for index in range(len(prices)))
         result = []
         for method_id, selected_definition, selected_variant in selected:
@@ -649,9 +776,12 @@ class FormulaPriceComparatorService:
                             ],
                         }
                     )
-            if selected_variant["origin"] == "USER_DEFINED":
+            if selected_variant["origin"] in {"USER_DEFINED", "BMAX_DERIVED"}:
+                comparison_definition = self._definition_for_reference(
+                    selected_definition, selected_variant, expected_bmax_pct
+                )
                 simulation = self.simulation_engine.evaluate_method(
-                    selected_definition,
+                    comparison_definition,
                     scenario.tender_price,
                     prices,
                     scenario.pmax,
@@ -661,8 +791,12 @@ class FormulaPriceComparatorService:
                 if simulation.status == "SIMULATION_OK":
                     series.append(
                         {
-                            "label": "Valores del usuario",
-                            "origin": "USER_DEFINED",
+                            "label": (
+                                "n = Bmax / 5"
+                                if selected_variant["origin"] == "BMAX_DERIVED"
+                                else "Valores del usuario"
+                            ),
+                            "origin": selected_variant["origin"],
                             "points": [
                                 {
                                     "discount_pct": row.discount_rate * 100.0,
@@ -693,9 +827,15 @@ class FormulaPriceComparatorService:
         current_prices = dict(zip(current_ids, current.offers))
         common_ids = [offer_id for offer_id in current_ids if offer_id in baseline_prices]
         impacts = []
-        for method_id, definition, _ in selected:
-            before = self.simulation_engine.evaluate_scenario(definition, baseline)
-            after = self.simulation_engine.evaluate_scenario(definition, current)
+        for method_id, definition, variant in selected:
+            before_definition = self._definition_for_reference(
+                definition, variant, self._scenario_bmax_pct(baseline)
+            )
+            after_definition = self._definition_for_reference(
+                definition, variant, self._scenario_bmax_pct(current)
+            )
+            before = self.simulation_engine.evaluate_scenario(before_definition, baseline)
+            after = self.simulation_engine.evaluate_scenario(after_definition, current)
             if before.status != "SIMULATION_OK" or after.status != "SIMULATION_OK":
                 continue
             before_scores = {row.offer_id: row.score for row in before.rows}
@@ -745,17 +885,188 @@ class FormulaPriceComparatorService:
             return "ONLY_OFFER_SET"
         return "OFFER_PRICES_CHANGED"
 
-    @staticmethod
-    def _curve_prices(scenario: Scenario) -> tuple[float, ...]:
-        minimum = min(scenario.offers)
-        if math.isclose(minimum, scenario.tender_price):
-            return tuple(sorted(set(scenario.offers)))
-        steps = 48
-        values = [
-            minimum + (scenario.tender_price - minimum) * index / steps
-            for index in range(steps + 1)
+    def _curve_points(
+        self,
+        scenario: Scenario,
+        definition: MethodDefinition,
+        maximum_discount_pct: float,
+        *,
+        scenario_id: str,
+    ) -> list[dict[str, float]]:
+        prices = self._curve_prices(scenario, maximum_discount_pct)
+        ids = tuple(f"{scenario_id.lower()}-{index}" for index in range(len(prices)))
+        simulation = self.simulation_engine.evaluate_method(
+            definition,
+            scenario.tender_price,
+            prices,
+            scenario.pmax,
+            scenario_id=scenario_id,
+            offer_ids=ids,
+        )
+        if simulation.status != "SIMULATION_OK":
+            return []
+        return [
+            {
+                "price": row.price,
+                "discount_pct": row.discount_rate * 100.0,
+                "score": row.score,
+                "score_pct": row.score_normalized * 100.0,
+            }
+            for row in sorted(simulation.rows, key=lambda item: item.discount_rate)
         ]
-        return tuple(values)
+
+    @staticmethod
+    def _curve_prices(
+        scenario: Scenario, maximum_discount_pct: float
+    ) -> tuple[float, ...]:
+        return tuple(
+            scenario.tender_price
+            * (1.0 - (maximum_discount_pct * index / (CURVE_POINT_COUNT - 1)) / 100.0)
+            for index in range(CURVE_POINT_COUNT)
+        )
+
+    @staticmethod
+    def _visual_bmax(expected_bmax_pct: float, observed_bmax_pct: float) -> float:
+        upper = max(expected_bmax_pct, observed_bmax_pct)
+        nearest_tick = round(upper / 5.0) * 5.0
+        if math.isclose(upper, nearest_tick, rel_tol=0.0, abs_tol=1e-6):
+            return min(100.0, nearest_tick)
+        return min(100.0, math.ceil((upper - 1e-9) / 5.0) * 5.0)
+
+    @staticmethod
+    def _expected_bmax(raw: Any) -> float:
+        if isinstance(raw, bool):
+            raise FormulaWebInputError("La Bmax teórica debe ser un número válido.")
+        try:
+            value = float(raw)
+        except (TypeError, ValueError):
+            raise FormulaWebInputError("La Bmax teórica debe ser un número válido.") from None
+        if not math.isfinite(value) or not 0 < value < 100:
+            raise FormulaWebInputError("La Bmax teórica debe estar entre 0 y 100 %.")
+        return value
+
+    @staticmethod
+    def _with_curve_role(method: Mapping[str, Any]) -> dict[str, Any]:
+        value = dict(method)
+        if method["reference_type"] == "Absoluta":
+            value["curve_explanation"] = (
+                "No cambia al variar las ofertas de terceros; la curva esperada y la resultante coinciden."
+            )
+        elif method["reference_type"] == "Mixta":
+            value["curve_explanation"] = (
+                "El primer tramo usa parámetros fijos y el tramo final depende de la Bmax observada."
+            )
+        else:
+            value["curve_explanation"] = (
+                "La curva esperada usa la Bmax teórica y la resultante las referencias observadas."
+            )
+        return value
+
+    def _add_theoretical_scores(
+        self,
+        rows: list[dict[str, Any]],
+        scenario: Scenario,
+        selected: Sequence[tuple[str, MethodDefinition, Mapping[str, Any]]],
+        expected_bmax_pct: float,
+    ) -> None:
+        reference_price = scenario.tender_price * (1.0 - expected_bmax_pct / 100.0)
+        for row in rows:
+            row["theoretical_scores"] = {}
+            row["score_differences"] = {}
+            for method_id, definition, variant in selected:
+                expected_definition = self._definition_for_reference(
+                    definition, variant, expected_bmax_pct
+                )
+                discount_pct = float(row["discount_pct"])
+                if expected_definition.set_dependencies and discount_pct > expected_bmax_pct + 1e-9:
+                    theoretical_score = None
+                else:
+                    target_price = float(row["price"])
+                    prices = (
+                        (target_price, reference_price)
+                        if expected_definition.set_dependencies
+                        else (target_price,)
+                    )
+                    simulation = self.simulation_engine.evaluate_method(
+                        expected_definition,
+                        scenario.tender_price,
+                        prices,
+                        scenario.pmax,
+                        scenario_id="THEORETICAL_POINT",
+                        offer_ids=tuple(f"point-{index}" for index in range(len(prices))),
+                    )
+                    theoretical_score = (
+                        simulation.rows[0].score
+                        if simulation.status == "SIMULATION_OK"
+                        else None
+                    )
+                row["theoretical_scores"][method_id] = theoretical_score
+                row["score_differences"][method_id] = (
+                    float(row["scores"][method_id]) - theoretical_score
+                    if theoretical_score is not None
+                    else None
+                )
+
+    @staticmethod
+    def _scenario_bmax_pct(scenario: Scenario) -> float:
+        return max(
+            (scenario.tender_price - value) / scenario.tender_price * 100.0
+            for value in scenario.offers
+        )
+
+    @staticmethod
+    def _definition_for_reference(
+        definition: MethodDefinition,
+        variant: Mapping[str, Any],
+        bmax_pct: float,
+    ) -> MethodDefinition:
+        if variant["origin"] != "BMAX_DERIVED":
+            return definition
+        return replace(
+            definition,
+            parameters={"n": bmax_pct / 5.0},
+            parameter_origin="BMAX_DERIVED",
+        )
+
+    @staticmethod
+    def _public_parameters(
+        method_id: str, parameters: Mapping[str, float]
+    ) -> dict[str, float]:
+        if method_id == "DISCOUNT_MAX_POWER":
+            return {"k": 1.0 / float(parameters["n"])}
+        if method_id == "DISCOUNT_THRESHOLD_TWO_SEGMENTS":
+            return {
+                "n": float(parameters["first_slope"]),
+                "B": float(parameters["threshold"]) * 100.0,
+                "k": float(parameters["tail_points"]),
+            }
+        return {str(key): float(value) for key, value in parameters.items()}
+
+    @staticmethod
+    def _engine_parameters(
+        method_id: str, parameters: Mapping[str, float]
+    ) -> dict[str, float]:
+        if method_id == "DISCOUNT_MAX_POWER":
+            return {"n": 1.0 / float(parameters["k"])}
+        if method_id == "DISCOUNT_THRESHOLD_TWO_SEGMENTS":
+            return {
+                "first_slope": float(parameters["n"]),
+                "threshold": float(parameters["B"]) / 100.0,
+                "tail_points": float(parameters["k"]),
+            }
+        return {str(key): float(value) for key, value in parameters.items()}
+
+    def _public_cases(self) -> list[dict[str, Any]]:
+        cases = self.case_catalog.cases()
+        for case in cases:
+            if case.get("actual_method_id") in {
+                "DISCOUNT_MAX_POWER",
+                "DISCOUNT_THRESHOLD_TWO_SEGMENTS",
+            }:
+                case["actual_parameters"] = self._public_parameters(
+                    case["actual_method_id"], case["actual_parameters"]
+                )
+        return cases
 
     @staticmethod
     def _same_parameters(left: Mapping[str, float], right: Mapping[str, float]) -> bool:
@@ -772,15 +1083,13 @@ class FormulaPriceComparatorService:
             suffix = " · caso lineal documentado" if math.isclose(parameters["n"], 1.0) else " · documentada"
             return f"n = {parameters['n']:g}{suffix}"
         if method_id == "DISCOUNT_MAX_POWER":
-            if math.isclose(parameters["n"], 1.0 / 6.0):
-                return "n = 1/6 · documentada"
-            return f"n = {parameters['n']:g} · documentada"
+            return f"k = {1.0 / parameters['n']:g} · documentada"
         if method_id == "EXPONENTIAL_SATURATING_DISCOUNT":
             return f"k = {parameters['k']:g} · documentada"
         if method_id == "DISCOUNT_THRESHOLD_TWO_SEGMENTS":
             return (
-                f"Pendiente {parameters['first_slope']:g} · umbral "
-                f"{parameters['threshold'] * 100:g} % · tramo final {parameters['tail_points']:g} pt"
+                f"n = {parameters['first_slope']:g} · B = "
+                f"{parameters['threshold'] * 100:g} % · k = {parameters['tail_points']:g} pt"
             )
         return "Configuración documentada"
 
