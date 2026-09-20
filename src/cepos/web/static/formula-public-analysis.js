@@ -199,11 +199,15 @@
     return item;
   };
 
+  const publicCaseHeading = (selectedCase) => selectedCase.complexity_level
+    ? `${selectedCase.label} · Complejidad ${selectedCase.complexity_level.toLocaleLowerCase("es-ES")}`
+    : selectedCase.label;
+
   const renderCaseStrip = () => {
     const actualMethod = catalog.methods.find(
       (method) => method.method_id === currentCase.actual_method_id
     );
-    nodes.caseTitle.textContent = currentCase.label;
+    nodes.caseTitle.textContent = publicCaseHeading(currentCase);
     nodes.caseNote.textContent = currentCase.note;
     nodes.caseStripFacts.replaceChildren(
       stripFact("Tipo", currentCase.contract_type),

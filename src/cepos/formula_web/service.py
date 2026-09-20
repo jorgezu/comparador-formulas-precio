@@ -26,7 +26,7 @@ from .public_cases import PublicFormulaCaseCatalog
 PRODUCT_VERSION = "FORMULA_WEB_PUBLIC_BETA_V1"
 PRODUCT_CONFIG_PATH = Path("config/public_tools/formula_price_comparator_v1.json")
 PUBLIC_CATALOG_PATH = Path(__file__).resolve().parent / "artifacts/formula_public_catalog_v1.json"
-PUBLIC_CASES_PATH = Path(__file__).resolve().parent / "artifacts/formula_public_cases_v1.json"
+PUBLIC_CASES_PATH = Path(__file__).resolve().parent / "artifacts/formula_public_cases_v2.json"
 CANONICAL_CATALOG_PATH = (
     Path(__file__).resolve().parent / "artifacts/formula_canonical_catalog_v1.json"
 )

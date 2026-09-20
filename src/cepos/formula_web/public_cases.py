@@ -8,10 +8,11 @@ from pathlib import Path
 from typing import Any, Mapping
 
 
-CASE_KEYS = {
+PUBLIC_CASE_FIELDS = (
     "case_id",
     "label",
     "contract_type",
+    "complexity_level",
     "tender_price",
     "pmax",
     "non_price_max",
@@ -29,7 +30,10 @@ CASE_KEYS = {
     "actual_awardee",
     "offers",
     "note",
-}
+)
+
+CASE_KEYS = frozenset(PUBLIC_CASE_FIELDS)
+VALID_COMPLEXITY_LEVELS = {"ESTÁNDAR", "MEDIA", "ALTA", "MUY ALTA"}
 
 OFFER_KEYS = {
     "offer_id",
@@ -48,7 +52,7 @@ class PublicFormulaCaseCatalog:
 
     def __init__(self, artifact_path: Path) -> None:
         artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
-        if artifact.get("schema_version") != "formula_public_cases_v1":
+        if artifact.get("schema_version") != "formula_public_cases_v2":
             raise ValueError("Unsupported public formula case catalog")
         raw_cases = artifact.get("cases")
         if not isinstance(raw_cases, list) or artifact.get("case_count") != len(raw_cases):
@@ -75,6 +79,9 @@ class PublicFormulaCaseCatalog:
             raise ValueError("Invalid public contract type")
         if raw["case_id"] != f"case-{index}" or raw["label"] != expected_label:
             raise ValueError("Invalid public case identity")
+        complexity_level = raw["complexity_level"]
+        if complexity_level is not None and complexity_level not in VALID_COMPLEXITY_LEVELS:
+            raise ValueError("Invalid public case complexity level")
 
         tender_price = cls._number(raw["tender_price"], expected_label)
         pmax = cls._number(raw["pmax"], expected_label)
@@ -100,7 +107,7 @@ class PublicFormulaCaseCatalog:
             if raw[field] not in offer_names:
                 raise ValueError("Public case result references an unknown offer")
 
-        checked_case = dict(raw)
+        checked_case = {key: raw[key] for key in PUBLIC_CASE_FIELDS}
         for key in (
             "tender_price",
             "pmax",
