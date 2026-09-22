@@ -27,6 +27,8 @@
     startSimulation: $("#start-technical-simulation"),
     discardSimulation: $("#discard-technical-simulation"),
     technicalEditor: $("#technical-editor"),
+    simulationPmax: $("#simulation-pmax"),
+    simulationPmaxReference: $("#simulation-pmax-reference"),
     technicalLimit: $("#technical-limit"),
     technicalFields: $("#technical-fields"),
     chartKicker: $("#chart-kicker"),
@@ -315,6 +317,10 @@
     nodes.dataTitle.textContent = simulationActive ? simulationCopy.simulation_data_title : originalDataTitle;
     nodes.chartKicker.textContent = simulationActive ? simulationCopy.simulation_chart_kicker : originalChartKicker;
     if (simulationActive) {
+      nodes.simulationPmax.value = nodes.pmax.value;
+      nodes.simulationPmaxReference.textContent = simulationCopy.simulation_price_points_real.replace(
+        "{value}", summaryNumber.format(currentCase.pmax)
+      );
       nodes.technicalLimit.textContent = `${simulationCopy.simulation_maximum} ${summaryNumber.format(currentCase.non_price_max)}`;
       renderTechnicalFields();
     }
@@ -969,7 +975,28 @@
 
   nodes.caseSelector.addEventListener("change", () => loadCase(nodes.caseSelector.value));
   nodes.tenderPrice.addEventListener("input", () => scheduleCompare());
-  nodes.pmax.addEventListener("input", () => scheduleCompare());
+  nodes.pmax.addEventListener("input", () => {
+    nodes.simulationPmax.value = nodes.pmax.value;
+    scheduleCompare();
+  });
+  nodes.simulationPmax.addEventListener("input", () => {
+    const value = Number(nodes.simulationPmax.value);
+    const valid = nodes.simulationPmax.value !== "" && Number.isFinite(value) && value > 0;
+    nodes.simulationPmax.setAttribute("aria-invalid", String(!valid));
+    if (!valid) {
+      setStatus(simulationCopy.simulation_price_points_error, "error");
+      return;
+    }
+    nodes.pmax.value = String(value);
+    setStatus(simulationCopy.simulation_price_points_updated);
+    scheduleCompare();
+  });
+  nodes.simulationPmax.addEventListener("change", () => {
+    if (nodes.simulationPmax.getAttribute("aria-invalid") === "true") {
+      nodes.simulationPmax.value = nodes.pmax.value;
+      nodes.simulationPmax.removeAttribute("aria-invalid");
+    }
+  });
   const updateExpectedBmax = (raw) => {
     const value = Number(raw);
     if (!Number.isFinite(value) || value <= 0 || value >= 100) return;

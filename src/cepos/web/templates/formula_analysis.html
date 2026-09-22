@@ -51,7 +51,15 @@
       <button class="fp-button fp-button-primary" id="start-technical-simulation" type="button">{{ copy.analysis.simulation_start }}</button>
       <button class="fp-button fp-button-outline" id="discard-technical-simulation" type="button" hidden>{{ copy.analysis.restore_case }}</button>
       <div class="fp-technical-editor" id="technical-editor" hidden>
-        <p class="fp-technical-limit" id="technical-limit"></p>
+        <div class="fp-simulation-settings">
+          <label class="fp-simulation-pmax" for="simulation-pmax">
+            <span>{{ copy.analysis.simulation_price_points }}</span>
+            <input id="simulation-pmax" type="number" inputmode="decimal" min="0.01" step="1">
+            <small>{{ copy.analysis.simulation_price_points_help }}</small>
+            <small id="simulation-pmax-reference"></small>
+          </label>
+          <p class="fp-technical-limit" id="technical-limit"></p>
+        </div>
         <div class="fp-technical-fields" id="technical-fields"></div>
       </div>
     </section>

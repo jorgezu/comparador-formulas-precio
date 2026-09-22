@@ -40,7 +40,7 @@ WEB_DIR = Path(__file__).resolve().parents[1] / "web"
 TEMPLATES = Jinja2Templates(directory=str(WEB_DIR / "templates"))
 STATIC_DIR = WEB_DIR / "static"
 MAX_REQUEST_BYTES = 64 * 1024
-ASSET_VERSION = "20260922-technical-copy"
+ASSET_VERSION = "20260922-simulation-pmax"
 
 
 class SecurityHeadersMiddleware:

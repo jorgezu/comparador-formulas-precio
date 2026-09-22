@@ -68,7 +68,7 @@
     },
     {
       "path": "src/cepos/formula_web/public_app.py",
-      "sha256": "b3282a03d82e1d0745dac1b2d49e93777290f8982fabd05c3886a2bef5119725"
+      "sha256": "192fc5c6072bb4352e9db78f0ea695c4fb606a6b8fb7310552c19ce6c542dbfd"
     },
     {
       "path": "src/cepos/formula_web/public_cases.py",
@@ -80,7 +80,7 @@
     },
     {
       "path": "src/cepos/formula_web/public_copy.py",
-      "sha256": "7279e2ec3c2d5d1e2f8950026986faba39cbcf296090c65885aa063587bc7508"
+      "sha256": "8b219c0e3cc66774a7f7d39f79a92e1fd38b818ddfae40ff423b6dd3a46db970"
     },
     {
       "path": "src/cepos/formula_web/server.py",
@@ -112,11 +112,11 @@
     },
     {
       "path": "src/cepos/web/static/formula-public-analysis.js",
-      "sha256": "1ff752364890e3d0caffb8ccae7c0be7ccad2abe3bc21ab53be8962f4e9bcd1d"
+      "sha256": "d8e981b5ea0c3a9d230c521635811e4bc1c6986d16306cfff7362a1a41fe69f8"
     },
     {
       "path": "src/cepos/web/static/formula-public.css",
-      "sha256": "68c7fb25088244c5258b5de852ee4638d24c605fa6e122f717c48a208b395269"
+      "sha256": "d91a39b8aa2b8788f3ff706215e8623a373ab694cb9d441e0a4f5262fd9f8008"
     },
     {
       "path": "src/cepos/web/static/formula-venn-header.png",
@@ -124,7 +124,7 @@
     },
     {
       "path": "src/cepos/web/templates/formula_analysis.html",
-      "sha256": "c86c141f7ec09b128057e7eb4ec924eb5ef57d9f3ad254ef5cf9b61692381bfe"
+      "sha256": "c8ec096d68adb65f3d15a32742dd1b9966975796bbdcf819607c135647810932"
     },
     {
       "path": "src/cepos/web/templates/formula_comparator.html",
