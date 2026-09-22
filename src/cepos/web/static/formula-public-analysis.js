@@ -13,12 +13,24 @@
   const svgNamespace = "http://www.w3.org/2000/svg";
   const $ = (selector) => document.querySelector(selector);
   const deepCopy = (value) => JSON.parse(JSON.stringify(value));
+  const simulationCopy = catalog.editorial.analysis_simulation;
 
   const nodes = {
     caseSelector: $("#case-selector"),
     caseTitle: $("#case-title"),
     caseStripFacts: $("#case-strip-facts"),
     caseNote: $("#case-note"),
+    simulationPanel: $("#simulation-panel"),
+    simulationKicker: $("#simulation-kicker"),
+    simulationTitle: $("#simulation-title"),
+    simulationDescription: $("#simulation-description"),
+    startSimulation: $("#start-technical-simulation"),
+    discardSimulation: $("#discard-technical-simulation"),
+    technicalEditor: $("#technical-editor"),
+    technicalLimit: $("#technical-limit"),
+    technicalFields: $("#technical-fields"),
+    chartKicker: $("#chart-kicker"),
+    dataTitle: $("#data-title"),
     scenarioGuidance: $("#scenario-guidance"),
     resultStatus: $("#result-status"),
     methodList: $("#method-list"),
@@ -56,10 +68,15 @@
     commercialTitle: $("#commercial-cta-title"),
     commercialCopy: $("#commercial-cta-copy"),
   };
+  const originalDataTitle = nodes.dataTitle.textContent;
+  const originalChartKicker = nodes.chartKicker.textContent;
 
   let currentCase = null;
   let offers = [];
   let baseline = null;
+  let baselineTechnical = null;
+  let simulationActive = false;
+  let rankingBeforeCopy = "price";
   let methodState = new Map();
   let lastResult = null;
   let rankingMode = "price";
@@ -109,7 +126,10 @@
   );
 
   const scenariosMatch = () => baseline
-    && JSON.stringify(baseline) === JSON.stringify(currentScenario());
+    && JSON.stringify(baseline) === JSON.stringify(currentScenario())
+    && JSON.stringify(baselineTechnical) === JSON.stringify(
+      offers.map(({ offer_id, non_price_points }) => ({ offer_id, non_price_points }))
+    );
 
   const sameParameters = (left, right) => {
     const leftKeys = Object.keys(left || {});
@@ -161,6 +181,14 @@
     return selection;
   });
 
+  const syncRankingButtons = () => {
+    document.querySelectorAll("[data-ranking]").forEach((button) => {
+      const active = button.dataset.ranking === rankingMode;
+      button.classList.toggle("is-active", active);
+      button.setAttribute("aria-pressed", String(active));
+    });
+  };
+
   const renderProfile = () => {
     document.querySelectorAll("#profile-selector [data-profile]").forEach((button) => {
       const active = button.dataset.profile === profile;
@@ -207,8 +235,10 @@
     const actualMethod = catalog.methods.find(
       (method) => method.method_id === currentCase.actual_method_id
     );
-    nodes.caseTitle.textContent = publicCaseHeading(currentCase);
-    nodes.caseNote.textContent = currentCase.note;
+    nodes.caseTitle.textContent = simulationActive
+      ? simulationCopy.simulation_case_prefix + publicCaseHeading(currentCase)
+      : publicCaseHeading(currentCase);
+    nodes.caseNote.textContent = simulationActive ? simulationCopy.simulation_note : currentCase.note;
     nodes.caseStripFacts.replaceChildren(
       stripFact("Tipo", currentCase.contract_type),
       stripFact("Precio de licitación", euro.format(currentCase.tender_price)),
@@ -219,7 +249,84 @@
     );
   };
 
+  const renderTechnicalFields = () => {
+    nodes.technicalFields.replaceChildren(...offers.map((offer) => {
+      const label = element("label", `fp-technical-field${offer.excluded ? " is-excluded" : ""}`);
+      const input = element("input");
+      input.type = "number";
+      input.inputMode = "decimal";
+      input.min = "0";
+      input.max = String(currentCase.non_price_max);
+      input.step = "0.01";
+      input.value = String(offer.non_price_points);
+      input.disabled = offer.excluded;
+      input.setAttribute("aria-label", `Puntos NO precio de ${offer.name}`);
+      input.addEventListener("input", () => {
+        const value = Number(input.value);
+        const valid = input.value !== "" && input.validity.valid && Number.isFinite(value);
+        input.setAttribute("aria-invalid", String(!valid));
+        if (!valid) {
+          setStatus(simulationCopy.simulation_limit_error.replace(
+            "{maximum}", summaryNumber.format(currentCase.non_price_max)
+          ), "error");
+          return;
+        }
+        offer.non_price_points = value;
+        if (lastResult) {
+          renderPermanentResults(lastResult);
+          renderImpact(lastResult);
+          renderTables(lastResult);
+          renderConclusions(lastResult);
+        }
+        setStatus(simulationCopy.simulation_updated);
+      });
+      input.addEventListener("change", () => {
+        if (input.getAttribute("aria-invalid") === "true") {
+          input.value = String(offer.non_price_points);
+          input.removeAttribute("aria-invalid");
+        }
+      });
+      const original = currentCase.offers.find((item) => item.offer_id === offer.offer_id);
+      label.append(
+        element("strong", "", offer.name),
+        input,
+        element("small", "", original
+          ? `${simulationCopy.simulation_original}: ${summaryNumber.format(original.non_price_points)}`
+          : "")
+      );
+      return label;
+    }));
+  };
+
+  const renderSimulationPanel = () => {
+    nodes.simulationPanel.classList.toggle("is-active", simulationActive);
+    nodes.simulationKicker.textContent = simulationActive
+      ? simulationCopy.simulation_active_kicker
+      : simulationCopy.simulation_kicker;
+    nodes.simulationTitle.textContent = simulationActive
+      ? `${simulationCopy.simulation_active_title} · ${currentCase.label}`
+      : simulationCopy.simulation_title;
+    nodes.simulationDescription.textContent = simulationActive
+      ? simulationCopy.simulation_active_description
+      : simulationCopy.simulation_description;
+    nodes.startSimulation.hidden = simulationActive;
+    nodes.discardSimulation.hidden = !simulationActive;
+    nodes.technicalEditor.hidden = !simulationActive;
+    nodes.dataTitle.textContent = simulationActive ? simulationCopy.simulation_data_title : originalDataTitle;
+    nodes.chartKicker.textContent = simulationActive ? simulationCopy.simulation_chart_kicker : originalChartKicker;
+    if (simulationActive) {
+      nodes.technicalLimit.textContent = `${simulationCopy.simulation_maximum} ${summaryNumber.format(currentCase.non_price_max)}`;
+      renderTechnicalFields();
+    }
+  };
+
   const loadCase = (caseId) => {
+    window.clearTimeout(debounceTimer);
+    if (requestController) requestController.abort();
+    lastResult = null;
+    if (simulationActive) rankingMode = rankingBeforeCopy;
+    simulationActive = false;
+    syncRankingButtons();
     currentCase = deepCopy(catalog.cases.find((item) => item.case_id === caseId) || catalog.cases[0]);
     nodes.caseSelector.value = currentCase.case_id;
     nodes.tenderPrice.value = String(currentCase.tender_price);
@@ -235,10 +342,12 @@
       excluded: false,
     }));
     baseline = deepCopy(currentScenario());
+    baselineTechnical = offers.map(({ offer_id, non_price_points }) => ({ offer_id, non_price_points }));
     methodState = defaultStateForCase(currentCase);
     rankingMethodId = currentCase.actual_formula_supported ? currentCase.actual_method_id : null;
     selectedOfferId = null;
     renderCaseStrip();
+    renderSimulationPanel();
     renderBmaxControl();
     renderMethodList();
     renderParameters();
@@ -443,6 +552,7 @@
       row.append(name, input, toggle);
       return row;
     }));
+    if (simulationActive) renderTechnicalFields();
   };
 
   const scheduleCompare = (delay = 250) => {
@@ -566,7 +676,13 @@
 
   const renderImpact = (result) => {
     if (scenariosMatch()) {
-      nodes.impactSummary.textContent = "Estás viendo la configuración real del caso.";
+      nodes.impactSummary.textContent = simulationActive
+        ? simulationCopy.simulation_unchanged
+        : "Estás viendo la configuración real del caso.";
+      return;
+    }
+    if (JSON.stringify(baseline) === JSON.stringify(currentScenario())) {
+      nodes.impactSummary.textContent = simulationCopy.simulation_technical_impact;
       return;
     }
     const impact = result.impacts.find((item) => item.method_id === rankingMethodId) || result.impacts[0];
@@ -825,9 +941,11 @@
           impact?.unchanged_price_changed_count
             ? "La simulación altera puntos de ofertas cuyo importe no ha cambiado, porque la fórmula depende del conjunto."
             : "En la simulación actual no cambian puntos de ofertas con el mismo importe.",
-          ranking[0]?.name === currentCase.best_technical_offer
-            ? "La mejor oferta técnica conserva la primera posición con la configuración observada."
-            : "La mejor oferta técnica no queda primera con la configuración observada.",
+          ranking[0]?.name === (simulationActive
+            ? [...offers].filter((offer) => !offer.excluded).sort((a, b) => b.non_price_points - a.non_price_points || a.price - b.price)[0]?.name
+            : currentCase.best_technical_offer)
+            ? `La mejor oferta técnica conserva la primera posición con ${simulationActive ? "esta simulación" : "la configuración observada"}.`
+            : `La mejor oferta técnica no queda primera con ${simulationActive ? "esta simulación" : "la configuración observada"}.`,
         ];
     nodes.conclusionList.replaceChildren(...conclusions.map((text) => element("li", "", text)));
   };
@@ -868,6 +986,21 @@
   });
   $("#restore-case").addEventListener("click", restoreCase);
   $("#restore-case-secondary").addEventListener("click", restoreCase);
+  nodes.discardSimulation.addEventListener("click", restoreCase);
+  nodes.startSimulation.addEventListener("click", () => {
+    rankingBeforeCopy = rankingMode;
+    simulationActive = true;
+    rankingMode = "total";
+    syncRankingButtons();
+    renderCaseStrip();
+    renderSimulationPanel();
+    if (lastResult) {
+      renderPermanentResults(lastResult);
+      renderImpact(lastResult);
+      renderConclusions(lastResult);
+    }
+    nodes.technicalFields.querySelector("input")?.focus();
+  });
   $("#add-offer").addEventListener("click", () => {
     if (offers.length >= catalog.max_offers) {
       setStatus(`El máximo es de ${catalog.max_offers} ofertas.`, "error");
@@ -910,11 +1043,7 @@
   document.querySelectorAll("[data-ranking]").forEach((button) => {
     button.addEventListener("click", () => {
       rankingMode = button.dataset.ranking;
-      document.querySelectorAll("[data-ranking]").forEach((item) => {
-        const active = item === button;
-        item.classList.toggle("is-active", active);
-        item.setAttribute("aria-pressed", String(active));
-      });
+      syncRankingButtons();
       if (lastResult) {
         renderPermanentResults(lastResult);
         renderConclusions(lastResult);

@@ -40,7 +40,7 @@ WEB_DIR = Path(__file__).resolve().parents[1] / "web"
 TEMPLATES = Jinja2Templates(directory=str(WEB_DIR / "templates"))
 STATIC_DIR = WEB_DIR / "static"
 MAX_REQUEST_BYTES = 64 * 1024
-ASSET_VERSION = "20260920-case-classification-v2"
+ASSET_VERSION = "20260922-technical-copy"
 
 
 class SecurityHeadersMiddleware:
@@ -102,6 +102,10 @@ def _page_context(request: Request) -> dict[str, Any]:
     catalog["release_label"] = PUBLIC_COPY["common"]["release_label"]
     catalog["editorial"] = {
         "analysis_profiles": PUBLIC_COPY["analysis"]["profiles"],
+        "analysis_simulation": {
+            key: value for key, value in PUBLIC_COPY["analysis"].items()
+            if key.startswith("simulation_")
+        },
     }
     catalog["api_url"] = "/api/formula-price-comparator/compare"
     catalog["home_url"] = "/formulas"
