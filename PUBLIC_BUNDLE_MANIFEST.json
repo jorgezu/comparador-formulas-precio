@@ -48,7 +48,7 @@
     },
     {
       "path": "src/cepos/formula_web/artifacts/formula_canonical_catalog_v1.json",
-      "sha256": "3c8c8200249e49ae50c2cf462616fb9360d43b4c95a77b321562caf582f6aceb"
+      "sha256": "391f836396bf122b06748d8734db7e11f86ea6133487846474eab2352013fa80"
     },
     {
       "path": "src/cepos/formula_web/artifacts/formula_public_cases_v2.json",
