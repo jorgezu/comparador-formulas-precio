@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import base64
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -40,7 +42,61 @@ WEB_DIR = Path(__file__).resolve().parents[1] / "web"
 TEMPLATES = Jinja2Templates(directory=str(WEB_DIR / "templates"))
 STATIC_DIR = WEB_DIR / "static"
 MAX_REQUEST_BYTES = 64 * 1024
-ASSET_VERSION = "20260922-simulation-pmax"
+ASSET_VERSION = "20260924-asset-recovery"
+ASSET_RECOVERY_SCRIPT = """(() => {
+  "use strict";
+  const retryKey = "tenderlab-analysis-assets-retry";
+  const retry = () => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("_assets", String(Date.now()));
+    window.location.replace(url);
+  };
+  const showFailure = () => {
+    if (document.querySelector("#formula-assets-error")) return;
+    const alert = document.createElement("section");
+    alert.id = "formula-assets-error";
+    alert.className = "fp-assets-error";
+    alert.setAttribute("role", "alert");
+    const title = document.createElement("strong");
+    title.textContent = "No se ha podido cargar la aplicación completa.";
+    const detail = document.createElement("p");
+    detail.textContent = "Comprueba la conexión y vuelve a intentarlo.";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = "Reintentar";
+    button.addEventListener("click", () => {
+      try { window.sessionStorage.removeItem(retryKey); } catch (_error) {}
+      retry();
+    });
+    alert.append(title, detail, button);
+    document.body.prepend(alert);
+  };
+  window.setTimeout(() => {
+    const stylesheet = document.querySelector("link[data-formula-stylesheet]");
+    const cssReady = stylesheet && Array.from(document.styleSheets).some(
+      (sheet) => sheet.href === stylesheet.href
+    );
+    const appReady = document.documentElement.dataset.formulaAppReady === "true";
+    if (cssReady && appReady) {
+      try { window.sessionStorage.removeItem(retryKey); } catch (_error) {}
+      const cleanUrl = new URL(window.location.href);
+      if (cleanUrl.searchParams.delete("_assets")) {
+        window.history.replaceState({}, "", cleanUrl);
+      }
+      return;
+    }
+    let alreadyRetried = false;
+    try {
+      alreadyRetried = window.sessionStorage.getItem(retryKey) === "1";
+      window.sessionStorage.setItem(retryKey, "1");
+    } catch (_error) {}
+    if (alreadyRetried) showFailure();
+    else retry();
+  }, 10000);
+})();"""
+ASSET_RECOVERY_HASH = base64.b64encode(
+    hashlib.sha256(ASSET_RECOVERY_SCRIPT.encode("utf-8")).digest()
+).decode("ascii")
 
 
 class SecurityHeadersMiddleware:
@@ -55,7 +111,16 @@ class SecurityHeadersMiddleware:
                 headers = list(message.get("headers", ()))
                 headers.extend(
                     [
-                        (b"content-security-policy", b"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"),
+                        (
+                            b"content-security-policy",
+                            (
+                                "default-src 'self'; "
+                                f"script-src 'self' 'sha256-{ASSET_RECOVERY_HASH}'; "
+                                "style-src 'self'; img-src 'self' data:; connect-src 'self'; "
+                                "object-src 'none'; base-uri 'none'; frame-ancestors 'none'; "
+                                "form-action 'self'"
+                            ).encode("ascii"),
+                        ),
                         (b"x-content-type-options", b"nosniff"),
                         (b"referrer-policy", b"no-referrer"),
                         (b"permissions-policy", b"camera=(), microphone=(), geolocation=(), payment=()"),
@@ -111,6 +176,8 @@ def _page_context(request: Request) -> dict[str, Any]:
     catalog["home_url"] = "/formulas"
     catalog["analyzer_url"] = "/formulas/analizador"
     catalog["lab_url"] = "/formulas/laboratorio"
+    retry_token = request.query_params.get("_assets", "")
+    retry_suffix = f"&retry={retry_token}" if retry_token.isdigit() else ""
     return {
         "request": request,
         "catalog": catalog,
@@ -118,8 +185,8 @@ def _page_context(request: Request) -> dict[str, Any]:
         "analyzer_url": catalog["analyzer_url"],
         "lab_url": catalog["lab_url"],
         "copy": PUBLIC_COPY,
-        "stylesheet_url": f"/static/formula-public.css?v={ASSET_VERSION}",
-        "format_script_url": f"/static/formula-format.js?v={ASSET_VERSION}",
+        "stylesheet_url": f"/static/formula-public.css?v={ASSET_VERSION}{retry_suffix}",
+        "format_script_url": f"/static/formula-format.js?v={ASSET_VERSION}{retry_suffix}",
     }
 
 
@@ -141,7 +208,10 @@ def formula_page(request: Request) -> Response:
 
 def formula_analysis_page(request: Request) -> Response:
     context = _page_context(request)
-    context["script_url"] = f"/static/formula-public-analysis.js?v={ASSET_VERSION}"
+    retry_token = request.query_params.get("_assets", "")
+    retry_suffix = f"&retry={retry_token}" if retry_token.isdigit() else ""
+    context["script_url"] = f"/static/formula-public-analysis.js?v={ASSET_VERSION}{retry_suffix}"
+    context["asset_recovery_script"] = ASSET_RECOVERY_SCRIPT
     return TEMPLATES.TemplateResponse(
         request=request,
         name="formula_analysis.html",
@@ -366,51 +436,57 @@ def health(_: Request) -> Response:
     return JSONResponse({"status": "ok", "product_version": PRODUCT_VERSION})
 
 
-def stylesheet(_: Request) -> Response:
+def _asset_cache_headers(request: Request) -> dict[str, str]:
+    if request.query_params.get("v") == ASSET_VERSION:
+        return {"Cache-Control": "public, max-age=31536000, immutable"}
+    return {"Cache-Control": "public, max-age=3600"}
+
+
+def stylesheet(request: Request) -> Response:
     return FileResponse(
         STATIC_DIR / "formula-public.css",
         media_type="text/css",
-        headers={"Cache-Control": "public, max-age=3600"},
+        headers=_asset_cache_headers(request),
     )
 
 
-def script(_: Request) -> Response:
+def script(request: Request) -> Response:
     return FileResponse(
         STATIC_DIR / "formula-public-analysis.js",
         media_type="text/javascript",
-        headers={"Cache-Control": "public, max-age=3600"},
+        headers=_asset_cache_headers(request),
     )
 
 
-def format_script(_: Request) -> Response:
+def format_script(request: Request) -> Response:
     return FileResponse(
         STATIC_DIR / "formula-format.js",
         media_type="text/javascript",
-        headers={"Cache-Control": "public, max-age=3600"},
+        headers=_asset_cache_headers(request),
     )
 
 
-def lab_script(_: Request) -> Response:
+def lab_script(request: Request) -> Response:
     return FileResponse(
         STATIC_DIR / "formula-lab.js",
         media_type="text/javascript",
-        headers={"Cache-Control": "public, max-age=3600"},
+        headers=_asset_cache_headers(request),
     )
 
 
-def venn_image(_: Request) -> Response:
+def venn_image(request: Request) -> Response:
     return FileResponse(
         STATIC_DIR / "formula-venn-header.png",
         media_type="image/png",
-        headers={"Cache-Control": "public, max-age=3600"},
+        headers=_asset_cache_headers(request),
     )
 
 
-def equations_image(_: Request) -> Response:
+def equations_image(request: Request) -> Response:
     return FileResponse(
         STATIC_DIR / "formula-equations-strip.png",
         media_type="image/png",
-        headers={"Cache-Control": "public, max-age=3600"},
+        headers=_asset_cache_headers(request),
     )
 
 

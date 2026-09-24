@@ -1088,4 +1088,5 @@
       renderConclusions(lastResult);
     }
   });
+  document.documentElement.dataset.formulaAppReady = "true";
 })();

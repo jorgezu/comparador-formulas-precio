@@ -6,7 +6,8 @@
   <meta name="color-scheme" content="light">
   <meta name="description" content="{{ copy.analysis.meta_description }}">
   <title>{{ copy.analysis.page_title }} · {{ catalog.title }}</title>
-  <link rel="stylesheet" href="{{ stylesheet_url }}">
+  <script>{{ asset_recovery_script | safe }}</script>
+  <link rel="stylesheet" href="{{ stylesheet_url }}" data-formula-stylesheet>
   <script id="formula-catalog" type="application/json">{{ catalog | tojson }}</script>
   <script defer src="{{ format_script_url }}"></script>
   <script defer src="{{ script_url }}"></script>

@@ -25,6 +25,33 @@ body {
   line-height: 1.45;
 }
 
+.fp-assets-error {
+  position: fixed;
+  inset: 16px 16px auto;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 14px 16px;
+  border: 1px solid #d79aa3;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: var(--fp-shadow);
+}
+
+.fp-assets-error p { margin: 0; color: var(--fp-muted); }
+.fp-assets-error button {
+  margin-left: auto;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 5px;
+  color: #fff;
+  background: var(--fp-red);
+  font-weight: 800;
+}
+
 button, input, select { font: inherit; }
 textarea { font: inherit; }
 button, select { cursor: pointer; }
