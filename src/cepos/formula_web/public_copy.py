@@ -121,6 +121,8 @@ PUBLIC_COPY = {
         "detail_zoom_reset": "Restablecer área",
         "detail_zoom_help": "Arrastra sobre la gráfica para redefinir el área ampliada.",
         "detail_zoom_label": "Detalle",
+        "color_contrast": "Más contraste",
+        "color_contrast_help": "Aumenta la separación visual entre los colores de las fórmulas.",
         "chart_svg_title": "Curvas de puntuación y ofertas del caso",
         "chart_svg_description": "El eje horizontal representa la baja porcentual y el vertical los puntos del criterio precio.",
         "active_formulas_aria": "Fórmulas activas",

@@ -6,7 +6,8 @@
 
   const catalog = JSON.parse(catalogNode.textContent);
   const colors = ["#087f8c", "#c84556", "#3568b8", "#d08a16", "#3d7f58", "#785c99", "#8b5a3c"];
-  const colorByMethod = new Map(catalog.methods.map((method, index) => [method.method_id, colors[index]]));
+  const contrastColors = ["#111111", "#e69f00", "#0072b2", "#009e73", "#6b4c9a", "#cc79a7", "#d55e00"];
+  let colorByMethod = new Map(catalog.methods.map((method, index) => [method.method_id, colors[index]]));
   const euro = new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const percent = new Intl.NumberFormat("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const summaryNumber = new Intl.NumberFormat("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -51,6 +52,7 @@
     showResultingCurve: $("#show-resulting-curve"),
     detailZoom: $("#detail-zoom"),
     resetDetailZoom: $("#reset-detail-zoom"),
+    colorContrast: $("#color-contrast"),
     impactSummary: $("#impact-summary"),
     chart: $("#result-chart"),
     chartLegend: $("#chart-legend"),
@@ -108,6 +110,13 @@
     const node = document.createElementNS(svgNamespace, name);
     Object.entries(attributes).forEach(([key, value]) => node.setAttribute(key, String(value)));
     return node;
+  };
+
+  const applyColorContrast = () => {
+    const palette = nodes.colorContrast.checked ? contrastColors : colors;
+    colorByMethod = new Map(
+      catalog.methods.map((method, index) => [method.method_id, palette[index]])
+    );
   };
 
   const setStatus = (message, kind = "ready") => {
@@ -1371,6 +1380,12 @@
     if (lastResult) renderChart(lastResult);
   });
   nodes.detailZoom.addEventListener("change", () => {
+    if (lastResult) renderChart(lastResult);
+  });
+  nodes.colorContrast.addEventListener("change", () => {
+    applyColorContrast();
+    renderMethodList();
+    renderParameters();
     if (lastResult) renderChart(lastResult);
   });
   nodes.resetDetailZoom.addEventListener("click", () => {

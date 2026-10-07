@@ -68,7 +68,7 @@
     },
     {
       "path": "src/cepos/formula_web/public_app.py",
-      "sha256": "b780724dec5b0205b5e5fe69b51fa0c5084b05dd74c47102ed35e4387653d855"
+      "sha256": "b4932f2a987638f7987c1386f729cfdcbf6e39cd7735d0e6d06939d0b1985f95"
     },
     {
       "path": "src/cepos/formula_web/public_cases.py",
@@ -80,7 +80,7 @@
     },
     {
       "path": "src/cepos/formula_web/public_copy.py",
-      "sha256": "23184c38e3bdcb416642e0dc0db8c04afb018709c247a7904cb01feea0a51587"
+      "sha256": "a44e5b89a3d8c2e89e9bcbfa436ee6b7a17031669245ffb7e1117c2d8b34d0a5"
     },
     {
       "path": "src/cepos/formula_web/server.py",
@@ -112,7 +112,7 @@
     },
     {
       "path": "src/cepos/web/static/formula-public-analysis.js",
-      "sha256": "889fb35e4b8656d8500b8c05ffc51c4994b2ac0d110c82464ca0df9345a24e69"
+      "sha256": "7ec5ef3fee3bad2649f216623c4578a6dead72a406d55a7ab7eeb20f8e8eda9d"
     },
     {
       "path": "src/cepos/web/static/formula-public.css",
@@ -124,7 +124,7 @@
     },
     {
       "path": "src/cepos/web/templates/formula_analysis.html",
-      "sha256": "4dfed27e8db309949c3a7bf7ba8f1ca7e4f17198016194fda5ea3c03dba5c901"
+      "sha256": "eec447c142292b5e669a63d5eb661a2810fcbdcbf858fd619eef564ca8d5136b"
     },
     {
       "path": "src/cepos/web/templates/formula_comparator.html",
