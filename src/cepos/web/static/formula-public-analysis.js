@@ -14,6 +14,7 @@
   const $ = (selector) => document.querySelector(selector);
   const deepCopy = (value) => JSON.parse(JSON.stringify(value));
   const simulationCopy = catalog.editorial.analysis_simulation;
+  const chartCopy = catalog.editorial.analysis_chart;
 
   const nodes = {
     caseSelector: $("#case-selector"),
@@ -48,6 +49,8 @@
     bmaxInlineComparison: $("#bmax-inline-comparison"),
     bmaxSummary: $("#bmax-summary"),
     showResultingCurve: $("#show-resulting-curve"),
+    detailZoom: $("#detail-zoom"),
+    resetDetailZoom: $("#reset-detail-zoom"),
     impactSummary: $("#impact-summary"),
     chart: $("#result-chart"),
     chartLegend: $("#chart-legend"),
@@ -85,6 +88,8 @@
   let rankingMethodId = null;
   let selectedOfferId = null;
   let expectedBmaxPct = 30;
+  let detailZoomBounds = null;
+  let detailZoomCustom = false;
   let debounceTimer = null;
   let requestController = null;
   let offerSequence = 20;
@@ -330,6 +335,9 @@
     window.clearTimeout(debounceTimer);
     if (requestController) requestController.abort();
     lastResult = null;
+    detailZoomBounds = null;
+    detailZoomCustom = false;
+    nodes.resetDetailZoom.hidden = true;
     if (simulationActive) rankingMode = rankingBeforeCopy;
     simulationActive = false;
     syncRankingButtons();
@@ -742,7 +750,348 @@
     const yLabel = svgElement("text", { x: 18, y: margin.top + plotHeight / 2, transform: `rotate(-90 18 ${margin.top + plotHeight / 2})`, "text-anchor": "middle", class: "fp-chart-label" });
     yLabel.textContent = "Puntos por precio";
     nodes.chart.append(yLabel);
-    return { x, y, margin, plotHeight };
+    return { x, y, margin, plotWidth, plotHeight, xMax: safeXMax, yMax };
+  };
+
+  const clamp = (value, minimum, maximum) => Math.min(maximum, Math.max(minimum, value));
+
+  const interpolateCurveScore = (points, discountPct) => {
+    const sorted = [...points].sort((left, right) => left.discount_pct - right.discount_pct);
+    if (
+      !sorted.length
+      || discountPct < sorted[0].discount_pct - 1e-8
+      || discountPct > sorted[sorted.length - 1].discount_pct + 1e-8
+    ) return null;
+    const exact = sorted.find((point) => Math.abs(point.discount_pct - discountPct) < 1e-8);
+    if (exact) return exact.score;
+    for (let index = 1; index < sorted.length; index += 1) {
+      const left = sorted[index - 1];
+      const right = sorted[index];
+      if (discountPct > right.discount_pct) continue;
+      const ratio = (discountPct - left.discount_pct) / (right.discount_pct - left.discount_pct);
+      return left.score + (right.score - left.score) * ratio;
+    }
+    return null;
+  };
+
+  const curvePointsInBounds = (points, bounds) => {
+    const bounded = [...points]
+      .filter((point) => point.discount_pct > bounds.xMin && point.discount_pct < bounds.xMax)
+      .sort((left, right) => left.discount_pct - right.discount_pct);
+    const startScore = interpolateCurveScore(points, bounds.xMin);
+    const endScore = interpolateCurveScore(points, bounds.xMax);
+    if (startScore !== null) bounded.unshift({ discount_pct: bounds.xMin, score: startScore });
+    if (endScore !== null) bounded.push({ discount_pct: bounds.xMax, score: endScore });
+    return bounded;
+  };
+
+  const detailCurveSeries = (result) => result.curves.flatMap((curve) => {
+    const series = [{
+      methodId: curve.method_id,
+      points: curve.expected_points,
+      resulting: false,
+    }];
+    if (
+      nodes.showResultingCurve.checked
+      && curve.method_id === rankingMethodId
+      && !curve.curves_coincide
+      && curve.resulting_points.length
+    ) {
+      series.push({
+        methodId: curve.method_id,
+        points: curve.resulting_points,
+        resulting: true,
+      });
+    }
+    return series;
+  });
+
+  const normalizeDetailBounds = (bounds, xMaximum, yMaximum) => {
+    const normalized = {
+      xMin: clamp(Math.min(bounds.xMin, bounds.xMax), 0, xMaximum),
+      xMax: clamp(Math.max(bounds.xMin, bounds.xMax), 0, xMaximum),
+      yMin: clamp(Math.min(bounds.yMin, bounds.yMax), 0, yMaximum),
+      yMax: clamp(Math.max(bounds.yMin, bounds.yMax), 0, yMaximum),
+    };
+    const minimumXSpan = Math.min(xMaximum, Math.max(0.5, xMaximum * 0.04));
+    const minimumYSpan = Math.min(yMaximum, Math.max(1, yMaximum * 0.04));
+    if (normalized.xMax - normalized.xMin < minimumXSpan) {
+      const center = (normalized.xMin + normalized.xMax) / 2;
+      normalized.xMin = clamp(center - minimumXSpan / 2, 0, xMaximum - minimumXSpan);
+      normalized.xMax = normalized.xMin + minimumXSpan;
+    }
+    if (normalized.yMax - normalized.yMin < minimumYSpan) {
+      const center = (normalized.yMin + normalized.yMax) / 2;
+      normalized.yMin = clamp(center - minimumYSpan / 2, 0, yMaximum - minimumYSpan);
+      normalized.yMax = normalized.yMin + minimumYSpan;
+    }
+    return normalized;
+  };
+
+  const automaticDetailBounds = (result) => {
+    const xMaximum = result.scenario.visual_maximum_discount_pct;
+    const yMaximum = result.scenario.pmax;
+    const discounts = result.rows.map((row) => row.discount_pct).sort((left, right) => left - right);
+    let cluster = discounts;
+    if (discounts.length >= 4) {
+      const windowSize = Math.max(3, Math.ceil(discounts.length * 0.65));
+      cluster = discounts.slice(0, windowSize);
+      for (let start = 1; start <= discounts.length - windowSize; start += 1) {
+        const candidate = discounts.slice(start, start + windowSize);
+        if (candidate[candidate.length - 1] - candidate[0] < cluster[cluster.length - 1] - cluster[0]) {
+          cluster = candidate;
+        }
+      }
+    }
+    const clusterMin = cluster[0] ?? 0;
+    const clusterMax = cluster[cluster.length - 1] ?? xMaximum;
+    const clusterSpan = Math.max(clusterMax - clusterMin, xMaximum * 0.08);
+    const xPadding = Math.max(1, clusterSpan * 0.55);
+    let xMin = clamp(clusterMin - xPadding, 0, xMaximum);
+    let xMax = clamp(clusterMax + xPadding, 0, xMaximum);
+    const preferredXSpan = Math.min(xMaximum, Math.max(4, xMaximum * 0.22));
+    if (xMax - xMin < preferredXSpan) {
+      const center = (xMin + xMax) / 2;
+      xMin = clamp(center - preferredXSpan / 2, 0, xMaximum - preferredXSpan);
+      xMax = xMin + preferredXSpan;
+    }
+    const provisional = { xMin, xMax, yMin: 0, yMax: yMaximum };
+    const boundedSeries = detailCurveSeries(result).map((series) => {
+      const seriesScores = curvePointsInBounds(series.points, provisional)
+        .map((point) => point.score)
+        .sort((left, right) => left - right);
+      return {
+        ...series,
+        scores: seriesScores,
+        center: seriesScores[Math.floor(seriesScores.length / 2)] ?? 0,
+      };
+    }).filter((series) => series.scores.length);
+    let focusedSeries = boundedSeries;
+    if (boundedSeries.length >= 3) {
+      const sortedSeries = [...boundedSeries].sort((left, right) => left.center - right.center);
+      const windowSize = Math.max(2, Math.ceil(sortedSeries.length * 0.65));
+      focusedSeries = sortedSeries.slice(0, windowSize);
+      for (let start = 1; start <= sortedSeries.length - windowSize; start += 1) {
+        const candidate = sortedSeries.slice(start, start + windowSize);
+        if (
+          candidate[candidate.length - 1].center - candidate[0].center
+          < focusedSeries[focusedSeries.length - 1].center - focusedSeries[0].center
+        ) focusedSeries = candidate;
+      }
+    }
+    const focusedMethodIds = new Set(focusedSeries.map((series) => series.methodId));
+    const scores = focusedSeries.flatMap((series) => series.scores);
+    result.rows
+      .filter((row) => row.discount_pct >= xMin && row.discount_pct <= xMax)
+      .forEach((row) => result.methods
+        .filter((method) => focusedMethodIds.has(method.method_id))
+        .forEach((method) => scores.push(row.scores[method.method_id])));
+    if (!scores.length) return provisional;
+    const scoreMin = Math.min(...scores);
+    const scoreMax = Math.max(...scores);
+    const scoreSpan = Math.max(scoreMax - scoreMin, yMaximum * 0.12);
+    const yPadding = Math.max(1.5, scoreSpan * 0.18);
+    let yMin = clamp(scoreMin - yPadding, 0, yMaximum);
+    let yMax = clamp(scoreMax + yPadding, 0, yMaximum);
+    const preferredYSpan = Math.min(yMaximum, Math.max(8, yMaximum * 0.24));
+    if (yMax - yMin < preferredYSpan) {
+      const center = (yMin + yMax) / 2;
+      yMin = clamp(center - preferredYSpan / 2, 0, yMaximum - preferredYSpan);
+      yMax = yMin + preferredYSpan;
+    }
+    return normalizeDetailBounds({ xMin, xMax, yMin, yMax }, xMaximum, yMaximum);
+  };
+
+  const chartPointer = (event) => {
+    const matrix = nodes.chart.getScreenCTM();
+    if (!matrix) return null;
+    const point = nodes.chart.createSVGPoint();
+    point.x = event.clientX;
+    point.y = event.clientY;
+    return point.matrixTransform(matrix.inverse());
+  };
+
+  const installDetailZoomSelection = (result, axes) => {
+    const surface = svgElement("rect", {
+      x: axes.margin.left,
+      y: axes.margin.top,
+      width: axes.plotWidth,
+      height: axes.plotHeight,
+      class: "fp-detail-select-surface",
+      "aria-label": chartCopy.detail_zoom_help,
+    });
+    let start = null;
+    let selection = null;
+    const updateSelection = (event) => {
+      if (!start || !selection) return;
+      const point = chartPointer(event);
+      if (!point) return;
+      const currentX = clamp(point.x, axes.margin.left, axes.margin.left + axes.plotWidth);
+      const currentY = clamp(point.y, axes.margin.top, axes.margin.top + axes.plotHeight);
+      selection.setAttribute("x", String(Math.min(start.x, currentX)));
+      selection.setAttribute("y", String(Math.min(start.y, currentY)));
+      selection.setAttribute("width", String(Math.abs(currentX - start.x)));
+      selection.setAttribute("height", String(Math.abs(currentY - start.y)));
+    };
+    const finishSelection = (event) => {
+      if (!start || !selection) return;
+      updateSelection(event);
+      const x = Number(selection.getAttribute("x"));
+      const y = Number(selection.getAttribute("y"));
+      const width = Number(selection.getAttribute("width"));
+      const height = Number(selection.getAttribute("height"));
+      start = null;
+      selection.remove();
+      selection = null;
+      if (surface.hasPointerCapture(event.pointerId)) surface.releasePointerCapture(event.pointerId);
+      if (width < 14 || height < 14) return;
+      const plotBottom = axes.margin.top + axes.plotHeight;
+      detailZoomBounds = normalizeDetailBounds({
+        xMin: (x - axes.margin.left) / axes.plotWidth * axes.xMax,
+        xMax: (x + width - axes.margin.left) / axes.plotWidth * axes.xMax,
+        yMin: (plotBottom - (y + height)) / axes.plotHeight * axes.yMax,
+        yMax: (plotBottom - y) / axes.plotHeight * axes.yMax,
+      }, axes.xMax, axes.yMax);
+      detailZoomCustom = true;
+      renderChart(result);
+    };
+    surface.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0) return;
+      const point = chartPointer(event);
+      if (!point) return;
+      start = {
+        x: clamp(point.x, axes.margin.left, axes.margin.left + axes.plotWidth),
+        y: clamp(point.y, axes.margin.top, axes.margin.top + axes.plotHeight),
+      };
+      selection = svgElement("rect", {
+        x: start.x,
+        y: start.y,
+        width: 0,
+        height: 0,
+        class: "fp-detail-drag-selection",
+      });
+      nodes.chart.append(selection);
+      surface.setPointerCapture(event.pointerId);
+      event.preventDefault();
+    });
+    surface.addEventListener("pointermove", updateSelection);
+    surface.addEventListener("pointerup", finishSelection);
+    surface.addEventListener("pointercancel", finishSelection);
+    nodes.chart.append(surface);
+  };
+
+  const renderDetailZoom = (result, axes, bounds) => {
+    const source = {
+      x: axes.x(bounds.xMin),
+      y: axes.y(bounds.yMax),
+      width: axes.x(bounds.xMax) - axes.x(bounds.xMin),
+      height: axes.y(bounds.yMin) - axes.y(bounds.yMax),
+    };
+    const frame = { x: 558, y: 266, width: 336, height: 168 };
+    const plot = {
+      left: frame.x + 42,
+      right: frame.x + frame.width - 11,
+      top: frame.y + 27,
+      bottom: frame.y + frame.height - 27,
+    };
+    const group = svgElement("g", {
+      class: "fp-detail-zoom",
+      "aria-hidden": "true",
+      "pointer-events": "none",
+    });
+    const sourceCenter = source.x + source.width / 2;
+    const connectFromRight = sourceCenter <= frame.x + frame.width / 2;
+    const sourceEdge = connectFromRight ? source.x + source.width : source.x;
+    const frameEdge = connectFromRight ? frame.x : frame.x + frame.width;
+    group.append(
+      svgElement("line", {
+        x1: sourceEdge,
+        y1: source.y,
+        x2: frameEdge,
+        y2: frame.y,
+        class: "fp-detail-connector",
+      }),
+      svgElement("line", {
+        x1: sourceEdge,
+        y1: source.y + source.height,
+        x2: frameEdge,
+        y2: frame.y + frame.height,
+        class: "fp-detail-connector",
+      }),
+      svgElement("rect", {
+        x: source.x,
+        y: source.y,
+        width: source.width,
+        height: source.height,
+        class: "fp-detail-source",
+      }),
+      svgElement("rect", {
+        x: frame.x,
+        y: frame.y,
+        width: frame.width,
+        height: frame.height,
+        rx: 6,
+        class: "fp-detail-frame",
+      })
+    );
+    const clipId = "formula-detail-zoom-clip";
+    const definitions = svgElement("defs");
+    const clipPath = svgElement("clipPath", { id: clipId });
+    clipPath.append(svgElement("rect", {
+      x: plot.left,
+      y: plot.top,
+      width: plot.right - plot.left,
+      height: plot.bottom - plot.top,
+    }));
+    definitions.append(clipPath);
+    group.append(definitions);
+    const detailX = (value) => plot.left
+      + (value - bounds.xMin) / (bounds.xMax - bounds.xMin) * (plot.right - plot.left);
+    const detailY = (value) => plot.bottom
+      - (value - bounds.yMin) / (bounds.yMax - bounds.yMin) * (plot.bottom - plot.top);
+    for (let index = 0; index <= 2; index += 1) {
+      const xValue = bounds.xMin + (bounds.xMax - bounds.xMin) * index / 2;
+      const yValue = bounds.yMin + (bounds.yMax - bounds.yMin) * index / 2;
+      group.append(
+        svgElement("line", { x1: detailX(xValue), y1: plot.top, x2: detailX(xValue), y2: plot.bottom, class: "fp-detail-grid" }),
+        svgElement("line", { x1: plot.left, y1: detailY(yValue), x2: plot.right, y2: detailY(yValue), class: "fp-detail-grid" })
+      );
+      const xLabel = svgElement("text", { x: detailX(xValue), y: frame.y + frame.height - 8, "text-anchor": "middle", class: "fp-detail-axis-label" });
+      xLabel.textContent = `${summaryNumber.format(xValue)} %`;
+      const yLabel = svgElement("text", { x: plot.left - 7, y: detailY(yValue) + 3, "text-anchor": "end", class: "fp-detail-axis-label" });
+      yLabel.textContent = summaryNumber.format(yValue);
+      group.append(xLabel, yLabel);
+    }
+    const title = svgElement("text", { x: frame.x + 11, y: frame.y + 18, class: "fp-detail-title" });
+    title.textContent = chartCopy.detail_zoom_label;
+    group.append(title);
+    const clipped = svgElement("g", { "clip-path": `url(#${clipId})` });
+    detailCurveSeries(result).forEach((series) => {
+      const points = curvePointsInBounds(series.points, bounds);
+      if (points.length < 2) return;
+      const path = svgElement("path", {
+        d: linePath(points.map((point) => [detailX(point.discount_pct), detailY(point.score)])),
+        class: `fp-detail-line${series.resulting ? " is-resulting" : ""}`,
+      });
+      path.style.setProperty("--series-color", colorByMethod.get(series.methodId));
+      clipped.append(path);
+    });
+    result.rows
+      .filter((row) => row.discount_pct >= bounds.xMin && row.discount_pct <= bounds.xMax)
+      .forEach((row) => result.methods.forEach((method) => {
+        const score = row.scores[method.method_id];
+        if (score < bounds.yMin || score > bounds.yMax) return;
+        const point = svgElement("circle", {
+          cx: detailX(row.discount_pct),
+          cy: detailY(score),
+          r: 3.2,
+          class: "fp-detail-point",
+        });
+        point.style.setProperty("--series-color", colorByMethod.get(method.method_id));
+        clipped.append(point);
+      }));
+    group.append(clipped);
+    nodes.chart.append(group);
   };
 
   const renderChart = (result) => {
@@ -773,6 +1122,12 @@
         nodes.chart.append(resultingPath);
       }
     });
+    if (nodes.detailZoom.checked) {
+      detailZoomBounds = detailZoomCustom && detailZoomBounds
+        ? normalizeDetailBounds(detailZoomBounds, axes.xMax, axes.yMax)
+        : automaticDetailBounds(result);
+      installDetailZoomSelection(result, axes);
+    }
     result.rows.forEach((row) => {
       const selected = row.offer_id === selectedOfferId;
       nodes.chart.append(svgElement("line", {
@@ -821,6 +1176,10 @@
         nodes.chart.append(point);
       });
     });
+    if (nodes.detailZoom.checked && detailZoomBounds) {
+      renderDetailZoom(result, axes, detailZoomBounds);
+    }
+    nodes.resetDetailZoom.hidden = !nodes.detailZoom.checked || !detailZoomCustom;
     nodes.chartLegend.replaceChildren(...result.methods.map((method) => {
       const details = element("details", "fp-legend-equation");
       details.style.setProperty("--series-color", colorByMethod.get(method.method_id));
@@ -1010,6 +1369,15 @@
   nodes.expectedBmaxNumber.addEventListener("input", () => updateExpectedBmax(nodes.expectedBmaxNumber.value));
   nodes.showResultingCurve.addEventListener("change", () => {
     if (lastResult) renderChart(lastResult);
+  });
+  nodes.detailZoom.addEventListener("change", () => {
+    if (lastResult) renderChart(lastResult);
+  });
+  nodes.resetDetailZoom.addEventListener("click", () => {
+    detailZoomCustom = false;
+    detailZoomBounds = lastResult ? automaticDetailBounds(lastResult) : null;
+    if (lastResult) renderChart(lastResult);
+    nodes.detailZoom.focus();
   });
   $("#restore-case").addEventListener("click", restoreCase);
   $("#restore-case-secondary").addEventListener("click", restoreCase);
