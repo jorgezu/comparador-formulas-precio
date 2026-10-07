@@ -21,6 +21,7 @@
     <nav class="fp-nav" aria-label="{{ copy.common.navigation_aria }}">
       <a aria-current="page" href="{{ analyzer_url }}">{{ copy.common.nav_analyzer }}</a>
       <a href="{{ lab_url }}">{{ copy.common.nav_lab }}</a>
+      <button class="fp-button fp-button-primary fp-report-open-button" id="report-open" type="button" aria-label="{{ copy.analysis.report_open_aria }}" disabled>{{ copy.analysis.report_open }}</button>
     </nav>
   </header>
 
@@ -182,6 +183,17 @@
       </div>
     </section>{% endif %}
   </main>
+
+  <section class="fp-report-preview" id="report-preview" aria-labelledby="report-preview-title" hidden>
+    <div class="fp-report-toolbar">
+      <div><p class="fp-kicker">{{ copy.analysis.report_kicker }}</p><h1 id="report-preview-title">{{ copy.analysis.report_preview_title }}</h1></div>
+      <div class="fp-report-actions">
+        <button class="fp-button fp-button-outline" id="report-close" type="button">{{ copy.analysis.report_close }}</button>
+        <button class="fp-button fp-button-primary" id="report-print" type="button">{{ copy.analysis.report_print }}</button>
+      </div>
+    </div>
+    <div class="fp-report-document" id="report-pages"></div>
+  </section>
 
   <footer class="fp-footer"><p>{{ copy.analysis.footer }}</p><p>{{ catalog.release_label }}</p></footer>
 </body>

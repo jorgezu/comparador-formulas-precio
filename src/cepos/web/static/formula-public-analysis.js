@@ -16,6 +16,7 @@
   const deepCopy = (value) => JSON.parse(JSON.stringify(value));
   const simulationCopy = catalog.editorial.analysis_simulation;
   const chartCopy = catalog.editorial.analysis_chart;
+  const reportCopy = catalog.editorial.analysis_report;
 
   const nodes = {
     caseSelector: $("#case-selector"),
@@ -74,6 +75,11 @@
     understandFormulaLink: $("#understand-formula-link"),
     commercialTitle: $("#commercial-cta-title"),
     commercialCopy: $("#commercial-cta-copy"),
+    reportOpen: $("#report-open"),
+    reportPreview: $("#report-preview"),
+    reportPages: $("#report-pages"),
+    reportClose: $("#report-close"),
+    reportPrint: $("#report-print"),
   };
   const originalDataTitle = nodes.dataTitle.textContent;
   const originalChartKicker = nodes.chartKicker.textContent;
@@ -95,6 +101,7 @@
   let debounceTimer = null;
   let requestController = null;
   let offerSequence = 20;
+  let reportScrollY = 0;
   let profile = new URLSearchParams(window.location.search).get("perfil") === "empresa"
     ? "empresa"
     : "administracion";
@@ -344,6 +351,7 @@
     window.clearTimeout(debounceTimer);
     if (requestController) requestController.abort();
     lastResult = null;
+    nodes.reportOpen.disabled = true;
     detailZoomBounds = null;
     detailZoomCustom = false;
     nodes.resetDetailZoom.hidden = true;
@@ -1324,6 +1332,259 @@
     nodes.conclusionList.replaceChildren(...conclusions.map((text) => element("li", "", text)));
   };
 
+  const reportWatermarkPreference = "tenderlab-report-without-watermark";
+
+  const reportWatermarkDisabled = () => {
+    try {
+      return window.localStorage.getItem(reportWatermarkPreference) === "1";
+    } catch (_error) {
+      return false;
+    }
+  };
+
+  const cleanReportClone = (source, className = "") => {
+    const clone = source.cloneNode(true);
+    if (className) clone.setAttribute("class", className);
+    [clone, ...clone.querySelectorAll("*")].forEach((item) => {
+      item.removeAttribute("id");
+      item.removeAttribute("for");
+      item.removeAttribute("aria-labelledby");
+      item.removeAttribute("aria-describedby");
+      item.removeAttribute("tabindex");
+    });
+    clone.querySelectorAll(".fp-detail-select-surface, .fp-detail-drag-selection").forEach((item) => item.remove());
+    return clone;
+  };
+
+  const reportPage = () => {
+    const page = element("section", "fp-report-page");
+    page.dataset.watermark = reportCopy.report_watermark;
+    return page;
+  };
+
+  const reportHeader = (caseLabel, contextLabel, generatedAt, pageNumber, pageCount) => {
+    const header = element("header", "fp-report-header");
+    const identity = element("div", "fp-report-identity");
+    identity.append(
+      element("p", "fp-kicker", reportCopy.report_kicker),
+      element("h1", "", reportCopy.report_title),
+      element("h2", "", caseLabel)
+    );
+    const meta = element("dl", "fp-report-meta");
+    const addMeta = (label, value) => {
+      const item = element("div");
+      item.append(element("dt", "", label), element("dd", "", value));
+      meta.append(item);
+    };
+    addMeta(reportCopy.report_profile, profile === "empresa" ? "Empresa" : "Administración");
+    addMeta(reportCopy.report_context, contextLabel);
+    addMeta(reportCopy.report_generated, generatedAt);
+    addMeta("Página", `${pageNumber}/${pageCount}`);
+    header.append(identity, meta);
+    return header;
+  };
+
+  const reportFooter = (pageNumber, pageCount) => {
+    const footer = element("footer", "fp-report-page-footer");
+    footer.append(
+      element("span", "", reportCopy.report_footer),
+      element("strong", "", `${reportCopy.report_watermark} · ${pageNumber}/${pageCount}`)
+    );
+    return footer;
+  };
+
+  const reportHeading = (title, text = "") => {
+    const heading = element("div", "fp-report-section-heading");
+    heading.append(element("h2", "", title));
+    if (text) heading.append(element("p", "", text));
+    return heading;
+  };
+
+  const reportMetric = (label, value, accent = false) => {
+    const item = element("div", `fp-report-metric${accent ? " is-accent" : ""}`);
+    item.append(element("span", "", label), element("strong", "", value || "—"));
+    return item;
+  };
+
+  const reportFact = (label, value, accent = false) => {
+    const item = element("div", accent ? "is-accent" : "");
+    item.append(element("span", "", label), element("strong", "", value));
+    return item;
+  };
+
+  const reportFacts = (method) => {
+    const facts = element("div", "fp-report-facts");
+    facts.append(
+      reportFact(reportCopy.report_type, currentCase.contract_type),
+      reportFact(reportCopy.report_tender_price, euro.format(Number(nodes.tenderPrice.value))),
+      reportFact(reportCopy.report_price_points, summaryNumber.format(Number(nodes.pmax.value))),
+      reportFact(reportCopy.report_included_offers, String(offers.filter((offer) => !offer.excluded).length)),
+      reportFact(reportCopy.report_formula, method.name),
+      reportFact(reportCopy.report_actual_awardee, currentCase.actual_awardee, true)
+    );
+    return facts;
+  };
+
+  const reportLegend = (result) => {
+    const legend = element("div", "fp-report-legend");
+    result.methods.forEach((method) => {
+      const item = element("span");
+      const swatch = element("i");
+      swatch.style.backgroundColor = colorByMethod.get(method.method_id);
+      item.append(swatch, document.createTextNode(method.name));
+      legend.append(item);
+    });
+    return legend;
+  };
+
+  const reportRankingTable = (result, method) => {
+    const ranking = rankedRows(result, method.method_id, rankingMode);
+    const precision = window.FormulaFormat.adaptiveDecimals(
+      ranking.map((row) => row.value), 2, 4
+    ).decimals;
+    const table = element("table", "fp-report-table fp-report-ranking-table");
+    const header = element("tr");
+    [
+      reportCopy.report_position,
+      reportCopy.report_offer,
+      reportCopy.report_economic_points,
+      reportCopy.report_non_price_points,
+      reportCopy.report_result,
+    ].forEach((label) => header.append(element("th", "", label)));
+    const head = element("thead");
+    head.append(header);
+    const body = element("tbody");
+    ranking.forEach((row, index) => {
+      const economic = Number(row.scores[method.method_id]);
+      const technical = nonPricePoints(row.offer_id);
+      const item = element("tr", index === 0 ? "is-report-winner" : "");
+      item.append(
+        element("td", "", String(index + 1)),
+        element("td", "", row.name),
+        element("td", "", formatScore(economic, precision)),
+        element("td", "", formatScore(technical, 2)),
+        element("td", "", formatScore(row.value, precision))
+      );
+      body.append(item);
+    });
+    table.append(head, body);
+    return table;
+  };
+
+  const buildReportPreview = () => {
+    if (!lastResult || !currentCase) return;
+    const method = currentMethod(lastResult);
+    const ranking = rankedRows(lastResult, method.method_id, rankingMode);
+    const generatedAt = new Intl.DateTimeFormat("es-ES", {
+      dateStyle: "long",
+      timeStyle: "short",
+    }).format(new Date());
+    const contextLabel = simulationActive ? reportCopy.report_simulation : reportCopy.report_real_case;
+    const separateScoresPage = offers.filter((offer) => !offer.excluded).length > 10
+      || lastResult.methods.length > 5;
+    const pageCount = separateScoresPage ? 3 : 2;
+
+    const firstPage = reportPage();
+    firstPage.append(reportHeader(nodes.caseTitle.textContent, contextLabel, generatedAt, 1, pageCount));
+    firstPage.append(reportFacts(method));
+
+    const overview = element("div", "fp-report-overview");
+    const chartSection = element("section", "fp-report-chart-section");
+    chartSection.append(reportHeading(reportCopy.report_chart_title));
+    const chartFrame = element("div", "fp-report-chart-frame");
+    chartFrame.append(cleanReportClone(nodes.chart, "fp-report-chart-svg"));
+    chartSection.append(chartFrame, reportLegend(lastResult));
+
+    const resultSection = element("section", "fp-report-result-section");
+    resultSection.append(reportHeading(reportCopy.report_result_title));
+    const metrics = element("div", "fp-report-metrics");
+    metrics.append(
+      reportMetric(reportCopy.report_formula, method.name),
+      reportMetric(
+        reportCopy.report_classification,
+        rankingMode === "total" ? reportCopy.report_total : reportCopy.report_price_only
+      ),
+      reportMetric(reportCopy.report_simulated_winner, ranking[0]?.name, true),
+      reportMetric(reportCopy.report_actual_awardee, currentCase.actual_awardee)
+    );
+    resultSection.append(
+      metrics,
+      cleanReportClone(nodes.bmaxSummary, "fp-report-bmax"),
+      cleanReportClone(nodes.baselineCompare, "fp-report-baseline")
+    );
+    overview.append(chartSection, resultSection);
+    firstPage.append(overview);
+
+    const interpretation = element("section", "fp-report-interpretation");
+    interpretation.append(reportHeading(reportCopy.report_interpretation_title));
+    const interpretationList = element("ul");
+    [...nodes.conclusionList.children].forEach((item) => {
+      interpretationList.append(element("li", "", item.textContent));
+    });
+    interpretation.append(interpretationList);
+    firstPage.append(interpretation, reportFooter(1, pageCount));
+
+    const secondPage = reportPage();
+    secondPage.append(reportHeader(nodes.caseTitle.textContent, contextLabel, generatedAt, 2, pageCount));
+    secondPage.append(reportHeading(reportCopy.report_data_title, reportCopy.report_scope));
+    const dataGrid = element("div", "fp-report-data-grid");
+    const offersSection = element("section", "fp-report-table-section");
+    offersSection.append(
+      reportHeading(reportCopy.report_offers_title),
+      cleanReportClone(nodes.caseDataBody.closest("table"), "fp-report-table")
+    );
+    const rankingSection = element("section", "fp-report-table-section");
+    rankingSection.append(
+      reportHeading(reportCopy.report_ranking_title, `${method.name} · ${rankingMode === "total" ? reportCopy.report_total : reportCopy.report_price_only}`),
+      reportRankingTable(lastResult, method)
+    );
+    dataGrid.append(offersSection, rankingSection);
+    secondPage.append(dataGrid);
+    const scoresSection = element("section", "fp-report-table-section fp-report-scores-section");
+    scoresSection.append(
+      reportHeading(reportCopy.report_scores_title, nodes.precisionNote.textContent),
+      cleanReportClone(nodes.scoresBody.closest("table"), "fp-report-table")
+    );
+    if (separateScoresPage) {
+      const thirdPage = reportPage();
+      thirdPage.append(
+        reportHeader(nodes.caseTitle.textContent, contextLabel, generatedAt, 3, pageCount),
+        scoresSection,
+        reportFooter(3, pageCount)
+      );
+      secondPage.append(reportFooter(2, pageCount));
+      nodes.reportPages.replaceChildren(firstPage, secondPage, thirdPage);
+    } else {
+      secondPage.append(scoresSection, reportFooter(2, pageCount));
+      nodes.reportPages.replaceChildren(firstPage, secondPage);
+    }
+  };
+
+  const openReportPreview = () => {
+    if (!lastResult) return;
+    buildReportPreview();
+    reportScrollY = window.scrollY;
+    document.body.classList.toggle("fp-report-owner", reportWatermarkDisabled());
+    document.body.classList.add("is-report-open");
+    nodes.reportPreview.hidden = false;
+    window.scrollTo(0, 0);
+    nodes.reportClose.focus();
+  };
+
+  const closeReportPreview = () => {
+    document.body.classList.remove("is-report-open");
+    nodes.reportPreview.hidden = true;
+    window.scrollTo(0, reportScrollY);
+    nodes.reportOpen.focus();
+  };
+
+  const printReport = () => {
+    const originalTitle = document.title;
+    document.title = `TenderLab · ${currentCase.label}`;
+    window.print();
+    window.setTimeout(() => { document.title = originalTitle; }, 1000);
+  };
+
   const renderResult = (result) => {
     renderBmaxControl(result);
     renderRankingFormula(result);
@@ -1333,6 +1594,7 @@
     renderSelectedOffer(result);
     renderTables(result);
     renderConclusions(result);
+    nodes.reportOpen.disabled = false;
   };
 
   const restoreCase = () => loadCase(currentCase.case_id);
@@ -1471,5 +1733,25 @@
       renderConclusions(lastResult);
     }
   });
+  nodes.reportOpen.addEventListener("click", openReportPreview);
+  nodes.reportClose.addEventListener("click", closeReportPreview);
+  nodes.reportPrint.addEventListener("click", printReport);
+  window.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && document.body.classList.contains("is-report-open")) {
+      closeReportPreview();
+    }
+  });
+  window.addEventListener("click", (event) => {
+    const inOwnerArea = event.clientX >= window.innerWidth - 72
+      && event.clientY >= window.innerHeight * 0.36
+      && event.clientY <= window.innerHeight * 0.64;
+    if (!inOwnerArea || event.detail !== 3) return;
+    try {
+      window.localStorage.setItem(reportWatermarkPreference, "1");
+    } catch (_error) {
+      return;
+    }
+    document.body.classList.add("fp-report-owner");
+  }, true);
   document.documentElement.dataset.formulaAppReady = "true";
 })();

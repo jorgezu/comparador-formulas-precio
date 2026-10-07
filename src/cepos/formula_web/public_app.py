@@ -42,7 +42,7 @@ WEB_DIR = Path(__file__).resolve().parents[1] / "web"
 TEMPLATES = Jinja2Templates(directory=str(WEB_DIR / "templates"))
 STATIC_DIR = WEB_DIR / "static"
 MAX_REQUEST_BYTES = 64 * 1024
-ASSET_VERSION = "20261007-case-strip-responsive-2"
+ASSET_VERSION = "20261007-report-v1-4"
 ASSET_RECOVERY_SCRIPT = """(() => {
   "use strict";
   const retryKey = "tenderlab-analysis-assets-retry";
@@ -174,6 +174,10 @@ def _page_context(request: Request) -> dict[str, Any]:
         "analysis_chart": {
             key: value for key, value in PUBLIC_COPY["analysis"].items()
             if key.startswith("detail_zoom_")
+        },
+        "analysis_report": {
+            key: value for key, value in PUBLIC_COPY["analysis"].items()
+            if key.startswith("report_")
         },
     }
     catalog["api_url"] = "/api/formula-price-comparator/compare"
