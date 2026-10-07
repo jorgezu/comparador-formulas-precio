@@ -294,9 +294,10 @@ select:focus, input:focus, button:focus-visible, a:focus-visible, summary:focus-
 .fp-case-strip-facts { display: grid; grid-template-columns: repeat(6, minmax(80px, 1fr)); gap: 8px; }
 .fp-case-strip-facts > div { min-width: 0; padding-left: 9px; border-left: 2px solid #dfe4e6; }
 .fp-case-strip-facts > div.is-accent { border-left-color: var(--fp-gold); }
-.fp-case-strip-facts span, .fp-case-strip-facts strong { display: block; overflow-wrap: anywhere; }
-.fp-case-strip-facts span { color: var(--fp-muted); font-size: 10px; text-transform: uppercase; }
-.fp-case-strip-facts strong { margin-top: 2px; font-size: 12px; }
+.fp-case-strip-facts span, .fp-case-strip-facts strong { display: block; }
+.fp-case-strip-facts span { color: var(--fp-muted); font-size: 10px; overflow-wrap: normal; text-transform: uppercase; }
+.fp-case-strip-facts strong { margin-top: 2px; font-size: 12px; overflow-wrap: anywhere; }
+.fp-case-strip > .fp-button { white-space: nowrap; }
 .fp-case-note { margin: 7px 3px 12px; color: var(--fp-muted); font-size: 11px; }
 .fp-simulation-panel {
   display: grid;
@@ -681,11 +682,14 @@ select:focus, input:focus, button:focus-visible, a:focus-visible, summary:focus-
 .fp-contact-return-links { margin-top: 22px; }
 .fp-honeypot { position: absolute !important; left: -10000px !important; width: 1px !important; height: 1px !important; overflow: hidden !important; }
 
+@media (max-width: 1500px) {
+  .fp-case-strip { grid-template-columns: 210px 260px minmax(0, 1fr); }
+  .fp-case-strip > .fp-button { grid-column: 3; grid-row: 1; justify-self: end; }
+  .fp-case-strip-facts { grid-column: 1 / -1; grid-row: 2; }
+}
+
 @media (max-width: 1270px) {
   .fp-technical-fields { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .fp-case-strip { grid-template-columns: 210px 260px minmax(0, 1fr); }
-  .fp-case-strip > .fp-button { grid-column: 3; justify-self: end; }
-  .fp-case-strip-facts { grid-column: 1 / 3; grid-row: 2; }
   .fp-cockpit { grid-template-columns: minmax(260px, 32fr) minmax(500px, 68fr); }
   .fp-result-column { position: static; grid-column: 1 / -1; display: grid; grid-template-columns: 180px minmax(180px, .7fr) minmax(270px, 1fr) minmax(300px, 1.2fr); gap: 10px; max-height: none; }
   .fp-result-heading, .fp-winner-current, .fp-baseline-compare, .fp-result-identities, .fp-ranking-switch, .fp-ranking-list, .fp-score-spread { margin-top: 0; }
@@ -712,7 +716,7 @@ select:focus, input:focus, button:focus-visible, a:focus-visible, summary:focus-
   .fp-equations-band img { max-height: 120px; }
   .fp-case-strip { grid-template-columns: 1fr; align-items: stretch; }
   .fp-case-strip-facts { grid-column: auto; grid-row: auto; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .fp-case-strip > .fp-button { grid-column: auto; justify-self: stretch; }
+  .fp-case-strip > .fp-button { grid-column: auto; grid-row: auto; justify-self: stretch; }
   .fp-cockpit { display: flex; flex-direction: column; }
   .fp-chart-column { order: 1; position: static; width: 100%; }
   .fp-result-column { order: 2; width: 100%; display: block; }

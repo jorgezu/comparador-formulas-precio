@@ -68,7 +68,7 @@
     },
     {
       "path": "src/cepos/formula_web/public_app.py",
-      "sha256": "b4932f2a987638f7987c1386f729cfdcbf6e39cd7735d0e6d06939d0b1985f95"
+      "sha256": "d664e8ecb08ccb808ef943959a1634de1cbe06edc4bb0384fd0708caa445934c"
     },
     {
       "path": "src/cepos/formula_web/public_cases.py",
@@ -116,7 +116,7 @@
     },
     {
       "path": "src/cepos/web/static/formula-public.css",
-      "sha256": "1ea017e97d2672aa9032b5ad41acfda18e26c0bb20f9a7d6ddaaf15a973421bd"
+      "sha256": "049cfea68d3751c9fdd07346f4b75346799261d015d1fc89d299866ec8af6927"
     },
     {
       "path": "src/cepos/web/static/formula-venn-header.png",
