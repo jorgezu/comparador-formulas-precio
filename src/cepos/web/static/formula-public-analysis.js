@@ -113,6 +113,19 @@
     return node;
   };
 
+  const editableNumber = (value) => {
+    const number = Number(value);
+    return Number.isFinite(number) ? number.toFixed(2) : "";
+  };
+
+  const syncOfferPriceInputs = (offerId, value, source) => {
+    document.querySelectorAll("input[data-offer-price]").forEach((input) => {
+      if (input !== source && input.dataset.offerPrice === offerId) {
+        input.value = editableNumber(value);
+      }
+    });
+  };
+
   const svgElement = (name, attributes = {}) => {
     const node = document.createElementNS(svgNamespace, name);
     Object.entries(attributes).forEach(([key, value]) => node.setAttribute(key, String(value)));
@@ -274,20 +287,75 @@
 
   const renderTechnicalFields = () => {
     nodes.technicalFields.replaceChildren(...offers.map((offer) => {
-      const label = element("label", `fp-technical-field${offer.excluded ? " is-excluded" : ""}`);
-      const input = element("input");
-      input.type = "number";
-      input.inputMode = "decimal";
-      input.min = "0";
-      input.max = String(currentCase.non_price_max);
-      input.step = "0.01";
-      input.value = String(offer.non_price_points);
-      input.disabled = offer.excluded;
-      input.setAttribute("aria-label", `Puntos NO precio de ${offer.name}`);
-      input.addEventListener("input", () => {
-        const value = Number(input.value);
-        const valid = input.value !== "" && input.validity.valid && Number.isFinite(value);
-        input.setAttribute("aria-invalid", String(!valid));
+      const field = element("section", `fp-technical-field${offer.excluded ? " is-excluded" : ""}`);
+      const heading = element("div", "fp-technical-field-heading");
+      heading.append(element("strong", "", offer.name));
+      const controls = element("div", "fp-technical-field-controls");
+      const original = currentCase.offers.find((item) => item.offer_id === offer.offer_id);
+
+      const priceLabel = element("label", "fp-technical-control");
+      const priceInput = element("input");
+      priceInput.type = "number";
+      priceInput.inputMode = "decimal";
+      priceInput.min = "0.01";
+      priceInput.max = String(Number(nodes.tenderPrice.value));
+      priceInput.step = "0.01";
+      priceInput.value = editableNumber(offer.price);
+      priceInput.disabled = offer.excluded;
+      priceInput.dataset.offerPrice = offer.offer_id;
+      priceInput.setAttribute("aria-label", `${simulationCopy.simulation_offer_price} de ${offer.name}`);
+      priceInput.addEventListener("input", () => {
+        priceInput.max = String(Number(nodes.tenderPrice.value));
+        const value = Number(priceInput.value);
+        const valid = priceInput.value !== ""
+          && priceInput.validity.valid
+          && Number.isFinite(value)
+          && value > 0
+          && value <= Number(nodes.tenderPrice.value);
+        priceInput.setAttribute("aria-invalid", String(!valid));
+        if (!valid) {
+          setStatus(simulationCopy.simulation_offer_price_error, "error");
+          return;
+        }
+        offer.price = value;
+        syncOfferPriceInputs(offer.offer_id, value, priceInput);
+        scheduleCompare();
+        setStatus(simulationCopy.simulation_offer_price_updated);
+      });
+      const normalizePriceInput = () => {
+        if (priceInput.getAttribute("aria-invalid") === "true") {
+          priceInput.value = editableNumber(offer.price);
+          priceInput.removeAttribute("aria-invalid");
+        } else {
+          priceInput.value = editableNumber(offer.price);
+        }
+      };
+      priceInput.addEventListener("change", normalizePriceInput);
+      priceInput.addEventListener("blur", normalizePriceInput);
+      priceLabel.append(
+        element("span", "", simulationCopy.simulation_offer_price),
+        priceInput,
+        element("small", "", original
+          ? `${simulationCopy.simulation_original}: ${euro.format(original.price)}`
+          : "")
+      );
+
+      const technicalLabel = element("label", "fp-technical-control");
+      const technicalInput = element("input");
+      technicalInput.type = "number";
+      technicalInput.inputMode = "decimal";
+      technicalInput.min = "0";
+      technicalInput.max = String(currentCase.non_price_max);
+      technicalInput.step = "0.01";
+      technicalInput.value = editableNumber(offer.non_price_points);
+      technicalInput.disabled = offer.excluded;
+      technicalInput.setAttribute("aria-label", `${simulationCopy.simulation_non_price_points} de ${offer.name}`);
+      technicalInput.addEventListener("input", () => {
+        const value = Number(technicalInput.value);
+        const valid = technicalInput.value !== ""
+          && technicalInput.validity.valid
+          && Number.isFinite(value);
+        technicalInput.setAttribute("aria-invalid", String(!valid));
         if (!valid) {
           setStatus(simulationCopy.simulation_limit_error.replace(
             "{maximum}", summaryNumber.format(currentCase.non_price_max)
@@ -303,21 +371,26 @@
         }
         setStatus(simulationCopy.simulation_updated);
       });
-      input.addEventListener("change", () => {
-        if (input.getAttribute("aria-invalid") === "true") {
-          input.value = String(offer.non_price_points);
-          input.removeAttribute("aria-invalid");
+      const normalizeTechnicalInput = () => {
+        if (technicalInput.getAttribute("aria-invalid") === "true") {
+          technicalInput.value = editableNumber(offer.non_price_points);
+          technicalInput.removeAttribute("aria-invalid");
+        } else {
+          technicalInput.value = editableNumber(offer.non_price_points);
         }
-      });
-      const original = currentCase.offers.find((item) => item.offer_id === offer.offer_id);
-      label.append(
-        element("strong", "", offer.name),
-        input,
+      };
+      technicalInput.addEventListener("change", normalizeTechnicalInput);
+      technicalInput.addEventListener("blur", normalizeTechnicalInput);
+      technicalLabel.append(
+        element("span", "", simulationCopy.simulation_non_price_points),
+        technicalInput,
         element("small", "", original
           ? `${simulationCopy.simulation_original}: ${summaryNumber.format(original.non_price_points)}`
           : "")
       );
-      return label;
+      controls.append(priceLabel, technicalLabel);
+      field.append(heading, controls);
+      return field;
     }));
   };
 
@@ -338,7 +411,7 @@
     nodes.dataTitle.textContent = simulationActive ? simulationCopy.simulation_data_title : originalDataTitle;
     nodes.chartKicker.textContent = simulationActive ? simulationCopy.simulation_chart_kicker : originalChartKicker;
     if (simulationActive) {
-      nodes.simulationPmax.value = nodes.pmax.value;
+      nodes.simulationPmax.value = editableNumber(nodes.pmax.value);
       nodes.simulationPmaxReference.textContent = simulationCopy.simulation_price_points_real.replace(
         "{value}", summaryNumber.format(currentCase.pmax)
       );
@@ -561,9 +634,11 @@
       input.step = "1000";
       input.value = String(offer.price);
       input.disabled = offer.excluded;
+      input.dataset.offerPrice = offer.offer_id;
       input.setAttribute("aria-label", `Importe de ${offer.name}`);
       input.addEventListener("input", () => {
         offer.price = Number(input.value);
+        syncOfferPriceInputs(offer.offer_id, offer.price, input);
         scheduleCompare();
       });
       const toggle = element("button", "fp-icon-button", offer.excluded ? "↺" : "×");
@@ -1623,8 +1698,10 @@
   });
   nodes.simulationPmax.addEventListener("change", () => {
     if (nodes.simulationPmax.getAttribute("aria-invalid") === "true") {
-      nodes.simulationPmax.value = nodes.pmax.value;
+      nodes.simulationPmax.value = editableNumber(nodes.pmax.value);
       nodes.simulationPmax.removeAttribute("aria-invalid");
+    } else {
+      nodes.simulationPmax.value = editableNumber(nodes.pmax.value);
     }
   });
   const updateExpectedBmax = (raw) => {
