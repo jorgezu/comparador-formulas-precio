@@ -36,7 +36,7 @@
     },
     {
       "path": "src/cepos/formula_simulation/engine.py",
-      "sha256": "66a84c46300a30e801e0a76178f23e10b150c90f287d7e4c6cb8cde6b2991887"
+      "sha256": "7443aaec73f1ca6866978ff46d8509c1db8fa310e00df4f0e45ba67f37075ccf"
     },
     {
       "path": "src/cepos/formula_simulation/models.py",
@@ -48,7 +48,7 @@
     },
     {
       "path": "src/cepos/formula_web/artifacts/formula_canonical_catalog_v1.json",
-      "sha256": "391f836396bf122b06748d8734db7e11f86ea6133487846474eab2352013fa80"
+      "sha256": "112bd88d896df97ae42a100ef3d48c1d79ca3fe6c517587ee92573844bcbdd06"
     },
     {
       "path": "src/cepos/formula_web/artifacts/formula_public_cases_v2.json",
@@ -56,7 +56,7 @@
     },
     {
       "path": "src/cepos/formula_web/artifacts/formula_public_catalog_v1.json",
-      "sha256": "0fe08905aad71b569444d21b35139eb34b61ed559564d267795433952eae8400"
+      "sha256": "4667923ab7e78b9999afd462b98576349f97c08a037f727a49464b4b2a763b20"
     },
     {
       "path": "src/cepos/formula_web/canonical_catalog.py",
@@ -68,7 +68,7 @@
     },
     {
       "path": "src/cepos/formula_web/public_app.py",
-      "sha256": "4a9b766a662b5f7adfb3d60c842534e1c0927fba671f549e4b3b4bdeb50b2ba6"
+      "sha256": "5b20457d7e6cbe7d1100875284f0a26ec8440442babc889623e83c1ae7d9071a"
     },
     {
       "path": "src/cepos/formula_web/public_cases.py",
@@ -88,7 +88,7 @@
     },
     {
       "path": "src/cepos/formula_web/service.py",
-      "sha256": "344f867f5d5ac0cadc0e620873faf560d69aa46d5fb7790573d1b2309151ddbd"
+      "sha256": "295861d7e61a44d888d6cbc5d31fa893f244469cf9be114cb96973cb5ba94e3c"
     },
     {
       "path": "src/cepos/web/static/formula-comparator.css",
@@ -108,11 +108,11 @@
     },
     {
       "path": "src/cepos/web/static/formula-lab.js",
-      "sha256": "e0564b2f1a7cc34bea84d97147ca7e5186a33ce965e2a1f29f8243ed9eb81e2e"
+      "sha256": "caa688577aa35228262da667ae0d2010f55cfa7465e76fb15d9129e0588ca3b9"
     },
     {
       "path": "src/cepos/web/static/formula-public-analysis.js",
-      "sha256": "517f8814e7e2c94e65f3e060af52a61430177e7ed28779d9aca578d9d4842a68"
+      "sha256": "9f11d7a974c99ea97ad396c7b1470b22199a81bc07ac5b1fad4f0d97b2172fdd"
     },
     {
       "path": "src/cepos/web/static/formula-public.css",

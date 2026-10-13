@@ -5,8 +5,8 @@
   if (!catalogNode || !window.FormulaFormat) return;
 
   const catalog = JSON.parse(catalogNode.textContent);
-  const colors = ["#087f8c", "#c84556", "#3568b8", "#d08a16", "#3d7f58", "#785c99", "#8b5a3c"];
-  const contrastColors = ["#111111", "#e69f00", "#0072b2", "#009e73", "#6b4c9a", "#cc79a7", "#d55e00"];
+  const colors = ["#087f8c", "#c84556", "#3568b8", "#d08a16", "#3d7f58", "#785c99", "#8b5a3c", "#a23b72", "#5f6f2a"];
+  const contrastColors = ["#111111", "#e69f00", "#0072b2", "#009e73", "#6b4c9a", "#cc79a7", "#d55e00", "#56b4e9", "#777777"];
   let colorByMethod = new Map(catalog.methods.map((method, index) => [method.method_id, colors[index]]));
   const euro = new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const percent = new Intl.NumberFormat("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -17,6 +17,7 @@
   const simulationCopy = catalog.editorial.analysis_simulation;
   const chartCopy = catalog.editorial.analysis_chart;
   const reportCopy = catalog.editorial.analysis_report;
+  const defaultCaseId = "case-1";
 
   const nodes = {
     caseSelector: $("#case-selector"),
@@ -154,7 +155,9 @@
   });
 
   const initialBmaxForCase = (selectedCase) => Number(
-    catalog.theoretical_bmax_defaults[selectedCase.contract_type] || 30
+    selectedCase.case_id === defaultCaseId
+      ? selectedCase.expected_maximum_discount_pct
+      : catalog.theoretical_bmax_defaults[selectedCase.contract_type] || 30
   );
 
   const nonPricePoints = (offerId) => Number(
@@ -468,15 +471,34 @@
     ));
   };
 
+  const observedBmedian = () => {
+    const tenderPrice = Number(nodes.tenderPrice.value);
+    const discounts = offers.filter((offer) => !offer.excluded).map(
+      (offer) => (tenderPrice - offer.price) / tenderPrice * 100
+    ).sort((left, right) => left - right);
+    const middle = Math.floor(discounts.length / 2);
+    return discounts.length % 2
+      ? discounts[middle]
+      : (discounts[middle - 1] + discounts[middle]) / 2;
+  };
+
   const renderBmaxControl = (result = null) => {
     const observed = result?.scenario.maximum_discount_pct ?? observedBmax();
-    nodes.expectedBmaxValue.textContent = `${summaryNumber.format(expectedBmaxPct)} %`;
-    nodes.bmaxInlineComparison.textContent = `Esperada ${summaryNumber.format(expectedBmaxPct)} % → observada ${percent.format(observed)} %`;
-    nodes.bmaxSummary.replaceChildren(
+    const medianMethodActive = catalog.methods.some(
+      (method) => method.uses_median && methodState.get(method.method_id)?.selected
+    );
+    const median = result?.scenario.median_discount_pct ?? observedBmedian();
+    const summary = [
       element("span", "", `Bmax esperada: ${summaryNumber.format(expectedBmaxPct)} %`),
       element("span", "", `Bmax real: ${percent.format(observed)} %`),
-      element("strong", "", `Diferencia: ${signedPp(observed - expectedBmaxPct)}`)
-    );
+    ];
+    if (medianMethodActive) {
+      summary.push(element("span", "", `Bmed real: ${percent.format(median)} %`));
+    }
+    summary.push(element("strong", "", `Diferencia: ${signedPp(observed - expectedBmaxPct)}`));
+    nodes.expectedBmaxValue.textContent = `${summaryNumber.format(expectedBmaxPct)} %`;
+    nodes.bmaxInlineComparison.textContent = `Esperada ${summaryNumber.format(expectedBmaxPct)} % → observada ${percent.format(observed)} %`;
+    nodes.bmaxSummary.replaceChildren(...summary);
   };
 
   const equationDetails = (method) => {
@@ -529,6 +551,7 @@
         }
         renderMethodList();
         renderParameters();
+        renderBmaxControl(lastResult);
         scheduleCompare(0);
       });
       label.append(
@@ -1676,7 +1699,7 @@
 
   populateCases();
   renderProfile();
-  loadCase(nodes.caseSelector.value || catalog.cases[0].case_id);
+  loadCase(defaultCaseId);
 
   nodes.caseSelector.addEventListener("change", () => loadCase(nodes.caseSelector.value));
   nodes.tenderPrice.addEventListener("input", () => scheduleCompare());

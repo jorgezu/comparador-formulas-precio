@@ -239,7 +239,10 @@
       if (sequence !== requestSequence) return;
       drawChart(series);
       renderTheoryNotes(method, series);
-      nodes.status.textContent = `${series.length} curva${series.length === 1 ? "" : "s"} · baja máxima esperada ${percent.format(expectedBmaxPct)} % · observada ${percent.format(observedBmaxPct)} %`;
+      const medianText = method.uses_median
+        ? ` · mediana observada ${percent.format(series[0].result.scenario.median_discount_pct)} %`
+        : "";
+      nodes.status.textContent = `${series.length} curva${series.length === 1 ? "" : "s"} · baja máxima esperada ${percent.format(expectedBmaxPct)} % · observada ${percent.format(observedBmaxPct)} %${medianText}`;
       nodes.status.className = "fp-status";
     } catch (error) {
       if (sequence !== requestSequence) return;

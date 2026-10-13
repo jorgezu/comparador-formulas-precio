@@ -10,9 +10,15 @@
       "display_name": "Proporcional inversa respecto del precio ofertado",
       "expression": "P = Pmax * Omin / Oi",
       "parameters": {},
-      "set_dependencies": ["OMIN"],
+      "set_dependencies": [
+        "OMIN"
+      ],
       "curvature": "CONVEX_IN_DISCOUNT",
-      "variants": [{"parameters": {}}]
+      "variants": [
+        {
+          "parameters": {}
+        }
+      ]
     },
     {
       "method_id": "LINEAR_DISCOUNT_MAX",
@@ -20,9 +26,15 @@
       "display_name": "Lineal respecto de la baja máxima",
       "expression": "P = Pmax * Bi / Bmax",
       "parameters": {},
-      "set_dependencies": ["BMAX"],
+      "set_dependencies": [
+        "BMAX"
+      ],
       "curvature": "LINEAR",
-      "variants": [{"parameters": {}}]
+      "variants": [
+        {
+          "parameters": {}
+        }
+      ]
     },
     {
       "method_id": "AFFINE_MIN_REFERENCE_OVER_TENDER_PRICE",
@@ -30,24 +42,54 @@
       "display_name": "Lineal afín respecto de la oferta mínima",
       "expression": "P = Pmax * (1 - (Oi - Omin) / PL)",
       "parameters": {},
-      "set_dependencies": ["OMIN"],
+      "set_dependencies": [
+        "OMIN"
+      ],
       "curvature": "LINEAR",
-      "variants": [{"parameters": {}}]
+      "variants": [
+        {
+          "parameters": {}
+        }
+      ]
     },
     {
       "method_id": "NORMALIZED_PRICE_GAP_POWER",
       "method_signature": "5ae5a586ed597944c919ca7c3d2ce67d453e3e193a6b4855147ccd12bd69ebce",
       "display_name": "Potencial sobre la brecha normalizada de precios",
       "expression": "P = Pmax * (1 - ((Oi - Omin) / (PL - Omin))^n)",
-      "parameters": {"n": 5.0},
-      "set_dependencies": ["OMIN"],
+      "parameters": {
+        "n": 5.0
+      },
+      "set_dependencies": [
+        "OMIN"
+      ],
       "curvature": "PARAMETRIC_CONCAVE_FOR_N_GT_1",
       "variants": [
-        {"parameters": {"n": 6.0}},
-        {"parameters": {"n": 5.0}},
-        {"parameters": {"n": 10.0}},
-        {"parameters": {"n": 3.0}},
-        {"parameters": {"n": 1.0}}
+        {
+          "parameters": {
+            "n": 6.0
+          }
+        },
+        {
+          "parameters": {
+            "n": 5.0
+          }
+        },
+        {
+          "parameters": {
+            "n": 10.0
+          }
+        },
+        {
+          "parameters": {
+            "n": 3.0
+          }
+        },
+        {
+          "parameters": {
+            "n": 1.0
+          }
+        }
       ]
     },
     {
@@ -55,22 +97,42 @@
       "method_signature": "94774115cc3ccac50889374b3925ea0498ffd3bd0040e76af5a08621dbe5c390",
       "display_name": "Potencial respecto de la baja máxima",
       "expression": "P = Pmax * (Bi / Bmax)^n",
-      "parameters": {"n": 0.16666666666666666},
-      "set_dependencies": ["BMAX"],
+      "parameters": {
+        "n": 0.16666666666666666
+      },
+      "set_dependencies": [
+        "BMAX"
+      ],
       "curvature": "PARAMETRIC_POWER",
-      "variants": [{"parameters": {"n": 0.16666666666666666}}]
+      "variants": [
+        {
+          "parameters": {
+            "n": 0.16666666666666666
+          }
+        }
+      ]
     },
     {
       "method_id": "EXPONENTIAL_SATURATING_DISCOUNT",
       "method_signature": "770ac68bc82248d46a759ec9b298fe22f9831af60afcc0f2a089e028866b71d2",
       "display_name": "Exponencial saturante respecto de la baja",
       "expression": "P = Pmax * (1 - exp(-k * 100 * Bi))",
-      "parameters": {"k": 0.3},
+      "parameters": {
+        "k": 0.3
+      },
       "set_dependencies": [],
       "curvature": "CONCAVE_SATURATING",
       "variants": [
-        {"parameters": {"k": 0.25}},
-        {"parameters": {"k": 0.3}}
+        {
+          "parameters": {
+            "k": 0.25
+          }
+        },
+        {
+          "parameters": {
+            "k": 0.3
+          }
+        }
       ]
     },
     {
@@ -78,13 +140,79 @@
       "method_signature": "60800cc0af7c2add13168a464dae065b44a68ec44db6a3494de16ba8c8c8083f",
       "display_name": "Lineal por tramos con umbral de baja",
       "expression": "P = piecewise(m1*Bi, m1*Bt + m2*(Bi-Bt)/(Bmax-Bt))",
-      "parameters": {"first_slope": 2.0, "threshold": 0.1, "tail_points": 5.0},
-      "set_dependencies": ["BMAX"],
+      "parameters": {
+        "first_slope": 2.0,
+        "threshold": 0.1,
+        "tail_points": 5.0
+      },
+      "set_dependencies": [
+        "BMAX"
+      ],
       "curvature": "PIECEWISE_LINEAR",
       "variants": [
-        {"parameters": {"first_slope": 3.0, "threshold": 0.1, "tail_points": 5.0}},
-        {"parameters": {"first_slope": 4.5, "threshold": 0.08, "tail_points": 3.0}},
-        {"parameters": {"first_slope": 2.0, "threshold": 0.1, "tail_points": 5.0}}
+        {
+          "parameters": {
+            "first_slope": 3.0,
+            "threshold": 0.1,
+            "tail_points": 5.0
+          }
+        },
+        {
+          "parameters": {
+            "first_slope": 4.5,
+            "threshold": 0.08,
+            "tail_points": 3.0
+          }
+        },
+        {
+          "parameters": {
+            "first_slope": 2.0,
+            "threshold": 0.1,
+            "tail_points": 5.0
+          }
+        }
+      ]
+    },
+    {
+      "method_id": "MEDIAN_NORMALIZED_EXPONENTIAL",
+      "method_signature": "079353ac84d90d11fc9103f18c6481a039d9c16b0b87f5626083a0025ac6eb7f",
+      "display_name": "Exponencial normalizada (mediana)",
+      "expression": "P = Pmax * (1 - exp(-Bi / (k * Bmedian))) / (1 - exp(-Bmax / (k * Bmedian)))",
+      "parameters": {
+        "k": 0.468
+      },
+      "set_dependencies": [
+        "BMAX",
+        "BMEDIAN"
+      ],
+      "curvature": "NORMALIZED_EXPONENTIAL",
+      "variants": [
+        {
+          "parameters": {
+            "k": 0.468
+          }
+        }
+      ]
+    },
+    {
+      "method_id": "MEDIAN_QUADRATIC_RATIONAL",
+      "method_signature": "744805ada40013d386aa9f1b3267eb107b022a0fc4ec8aeaa5f2ac9e8076f9b7",
+      "display_name": "Racional cuadrática (mediana)",
+      "expression": "P = Pmax * (Bi^2 * (Bmax^2 + k^2 * Bmedian^2)) / (Bmax^2 * (Bi^2 + k^2 * Bmedian^2))",
+      "parameters": {
+        "k": 0.383
+      },
+      "set_dependencies": [
+        "BMAX",
+        "BMEDIAN"
+      ],
+      "curvature": "QUADRATIC_RATIONAL",
+      "variants": [
+        {
+          "parameters": {
+            "k": 0.383
+          }
+        }
       ]
     }
   ]

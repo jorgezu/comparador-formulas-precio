@@ -7,6 +7,7 @@ import json
 import math
 import os
 from pathlib import Path
+import statistics
 from typing import Any, Mapping, Sequence
 from urllib.parse import urlsplit
 
@@ -117,6 +118,28 @@ PUBLIC_METHODS: dict[str, dict[str, Any]] = {
         "behavior": "Lineal por tramos",
         "reference_type": "Mixta",
     },
+    "MEDIAN_NORMALIZED_EXPONENTIAL": {
+        "name": "Exponencial normalizada (mediana)",
+        "short_name": "Exp. normalizada mediana",
+        "description": (
+            "Normaliza una curva exponencial para que la baja máxima obtenga Pmax y "
+            "usa la mediana de las bajas para modular su forma."
+        ),
+        "dependency": "Baja máxima y mediana de las bajas del conjunto",
+        "behavior": "Exponencial, creciente y normalizada",
+        "reference_type": "Relativa",
+    },
+    "MEDIAN_QUADRATIC_RATIONAL": {
+        "name": "Racional cuadrática (mediana)",
+        "short_name": "Racional cuadrática mediana",
+        "description": (
+            "Combina términos cuadráticos de la baja, la baja máxima y la mediana "
+            "para mantener capacidad discriminatoria entre ofertas próximas."
+        ),
+        "dependency": "Baja máxima y mediana de las bajas del conjunto",
+        "behavior": "Racional cuadrática, creciente y normalizada",
+        "reference_type": "Relativa",
+    },
 }
 
 
@@ -141,6 +164,12 @@ PARAMETER_FIELDS: dict[str, tuple[dict[str, Any], ...]] = {
             "step": 0.01,
         },
         {"name": "k", "label": "Puntos del tramo final k", "min": 0.01, "max": 100.0, "step": 0.01},
+    ),
+    "MEDIAN_NORMALIZED_EXPONENTIAL": (
+        {"name": "k", "label": "Coeficiente k", "min": 0.001, "max": 5.0, "step": 0.001},
+    ),
+    "MEDIAN_QUADRATIC_RATIONAL": (
+        {"name": "k", "label": "Coeficiente k", "min": 0.001, "max": 5.0, "step": 0.001},
     ),
 }
 
@@ -167,7 +196,7 @@ class FormulaPriceComparatorService:
         self.comparison_engine = FormulaComparisonEngine(self.simulation_engine)
         self.methods = {item.method_id: item for item in self.catalog.confirmed_methods()}
         if set(self.methods) != set(PUBLIC_METHODS) or set(self.methods) != set(canonical):
-            raise ValueError("The public formula catalog does not match the seven confirmed methods")
+            raise ValueError("The public formula catalog does not match the supported methods")
         for method_id, method in self.methods.items():
             if canonical[method_id]["implementation_expression"] != method.expression:
                 raise ValueError(
@@ -238,6 +267,8 @@ class FormulaPriceComparatorService:
                     "source_alignment": list(public["source_alignment"]),
                     "discrepancies": list(public["discrepancies"]),
                     "default_selected": method_id in default_methods,
+                    "experimental": False,
+                    "uses_median": "BMEDIAN" in method.set_dependencies,
                     "default_variant_id": default_variant_id,
                     "variants": [
                         {
@@ -314,6 +345,7 @@ class FormulaPriceComparatorService:
             (scenario.tender_price - value) / scenario.tender_price * 100.0
             for value in scenario.offers
         )
+        observed_bmedian_pct = self._scenario_bmedian_pct(scenario)
         selected = self._selected_methods(
             payload.get("methods"), observed_bmax_pct=observed_bmax_pct
         )
@@ -344,6 +376,7 @@ class FormulaPriceComparatorService:
                 "offer_count": len(scenario.offers),
                 "minimum_offer": min(scenario.offers),
                 "maximum_discount_pct": observed_bmax_pct,
+                "median_discount_pct": observed_bmedian_pct,
                 "expected_maximum_discount_pct": expected_bmax_pct,
                 "bmax_difference_pp": observed_bmax_pct - expected_bmax_pct,
                 "visual_maximum_discount_pct": visual_bmax_pct,
@@ -700,8 +733,11 @@ class FormulaPriceComparatorService:
         for method_id, definition, variant in selected:
             is_absolute = not definition.set_dependencies
             expected_limit = visual_bmax_pct if is_absolute else expected_bmax_pct
+            curve_definition = self._definition_with_median_reference(
+                definition, scenario
+            )
             expected_definition = self._definition_for_reference(
-                definition, variant, expected_bmax_pct
+                curve_definition, variant, expected_bmax_pct
             )
             expected_points = self._curve_points(
                 scenario,
@@ -715,7 +751,7 @@ class FormulaPriceComparatorService:
             if not is_absolute:
                 resulting_points = self._curve_points(
                     scenario,
-                    definition,
+                    curve_definition,
                     observed_bmax_pct,
                     scenario_id="RESULTING_CURVE",
                 )
@@ -754,8 +790,11 @@ class FormulaPriceComparatorService:
                 continue
             series = []
             for _, definition in documented:
+                curve_definition = self._definition_with_median_reference(
+                    definition, scenario
+                )
                 simulation = self.simulation_engine.evaluate_method(
-                    definition,
+                    curve_definition,
                     scenario.tender_price,
                     prices,
                     scenario.pmax,
@@ -779,6 +818,9 @@ class FormulaPriceComparatorService:
             if selected_variant["origin"] in {"USER_DEFINED", "BMAX_DERIVED"}:
                 comparison_definition = self._definition_for_reference(
                     selected_definition, selected_variant, expected_bmax_pct
+                )
+                comparison_definition = self._definition_with_median_reference(
+                    comparison_definition, scenario
                 )
                 simulation = self.simulation_engine.evaluate_method(
                     comparison_definition,
@@ -974,8 +1016,11 @@ class FormulaPriceComparatorService:
             row["theoretical_scores"] = {}
             row["score_differences"] = {}
             for method_id, definition, variant in selected:
+                curve_definition = self._definition_with_median_reference(
+                    definition, scenario
+                )
                 expected_definition = self._definition_for_reference(
-                    definition, variant, expected_bmax_pct
+                    curve_definition, variant, expected_bmax_pct
                 )
                 discount_pct = float(row["discount_pct"])
                 if expected_definition.set_dependencies and discount_pct > expected_bmax_pct + 1e-9:
@@ -1015,6 +1060,30 @@ class FormulaPriceComparatorService:
         )
 
     @staticmethod
+    def _scenario_bmedian_pct(scenario: Scenario) -> float:
+        return float(statistics.median(
+            (scenario.tender_price - value) / scenario.tender_price * 100.0
+            for value in scenario.offers
+        ))
+
+    @classmethod
+    def _definition_with_median_reference(
+        cls, definition: MethodDefinition, scenario: Scenario
+    ) -> MethodDefinition:
+        if definition.method_id not in {
+            "MEDIAN_NORMALIZED_EXPONENTIAL",
+            "MEDIAN_QUADRATIC_RATIONAL",
+        }:
+            return definition
+        return replace(
+            definition,
+            parameters={
+                **definition.parameters,
+                "_bmedian": cls._scenario_bmedian_pct(scenario) / 100.0,
+            },
+        )
+
+    @staticmethod
     def _definition_for_reference(
         definition: MethodDefinition,
         variant: Mapping[str, Any],
@@ -1040,7 +1109,11 @@ class FormulaPriceComparatorService:
                 "B": float(parameters["threshold"]) * 100.0,
                 "k": float(parameters["tail_points"]),
             }
-        return {str(key): float(value) for key, value in parameters.items()}
+        return {
+            str(key): float(value)
+            for key, value in parameters.items()
+            if not str(key).startswith("_")
+        }
 
     @staticmethod
     def _engine_parameters(
@@ -1091,12 +1164,19 @@ class FormulaPriceComparatorService:
                 f"n = {parameters['first_slope']:g} · B = "
                 f"{parameters['threshold'] * 100:g} % · k = {parameters['tail_points']:g} pt"
             )
+        if method_id in {
+            "MEDIAN_NORMALIZED_EXPONENTIAL",
+            "MEDIAN_QUADRATIC_RATIONAL",
+        }:
+            return f"k = {parameters['k']:g}"
         return "Configuración documentada"
 
     @staticmethod
     def _public_engine_error(error: str) -> str:
         if "Bmax is zero" in error or "PL - Omin is zero" in error:
             return "Al menos una oferta debe ser inferior al presupuesto para comparar estas fórmulas."
+        if "Bmedian is zero" in error:
+            return "Las fórmulas basadas en la mediana necesitan una mediana de bajas mayor que cero."
         if "Scores outside" in error:
             return "La combinación de escenario y parámetros produce puntuaciones fuera del rango válido."
         if "Missing or invalid parameter" in error:

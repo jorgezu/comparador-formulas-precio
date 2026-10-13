@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import statistics
 from typing import Mapping, Sequence
 
 from .models import MethodDefinition, OfferScore, Scenario, SimulationResult, SIMULATION_VERSION
@@ -52,7 +53,8 @@ class FormulaSimulationEngine:
         discounts = tuple((scenario.tender_price - offer) / scenario.tender_price for offer in scenario.offers)
         bmax = max(discounts)
         bmean = sum(discounts) / len(discounts)
-        derived = {"OMIN": omin, "BMAX": bmax, "BMEAN": bmean}
+        bmedian = statistics.median(discounts)
+        derived = {"OMIN": omin, "BMAX": bmax, "BMEAN": bmean, "BMEDIAN": bmedian}
         try:
             raw_scores = [
                 self._score(
@@ -63,6 +65,7 @@ class FormulaSimulationEngine:
                     pmax=scenario.pmax,
                     omin=omin,
                     bmax=bmax,
+                    bmedian=bmedian,
                     parameters=params,
                 )
                 for offer, discount in zip(scenario.offers, discounts)
@@ -136,6 +139,7 @@ class FormulaSimulationEngine:
         pmax: float,
         omin: float,
         bmax: float,
+        bmedian: float,
         parameters: Mapping[str, float],
     ) -> float:
         if method_id == "INVERSE_PRICE_PROPORTIONAL":
@@ -171,6 +175,36 @@ class FormulaSimulationEngine:
                 first_slope * threshold * 100.0
                 + tail_points * (discount - threshold) / (bmax - threshold)
             )
+        if method_id in {
+            "MEDIAN_NORMALIZED_EXPONENTIAL",
+            "MEDIAN_QUADRATIC_RATIONAL",
+        }:
+            if bmax == 0:
+                raise ZeroDivisionError("Bmax is zero")
+            bmedian_reference = parameters.get("_bmedian", bmedian)
+            if bmedian_reference == 0:
+                raise ZeroDivisionError("Bmedian is zero")
+            if math.isclose(discount, bmax, rel_tol=0.0, abs_tol=1e-15):
+                return pmax
+            k = parameters["k"]
+            if method_id == "MEDIAN_NORMALIZED_EXPONENTIAL":
+                scale = k * bmedian_reference
+                denominator = -math.expm1(-bmax / scale)
+                if denominator <= 0:
+                    raise ZeroDivisionError("Normalized exponential denominator is zero")
+                return pmax * (-math.expm1(-discount / scale)) / denominator
+            discount_squared = discount * discount
+            bmax_squared = bmax * bmax
+            median_term = k * k * bmedian_reference * bmedian_reference
+            denominator = bmax_squared * (discount_squared + median_term)
+            if denominator <= 0:
+                raise ZeroDivisionError("Quadratic rational denominator is zero")
+            return (
+                pmax
+                * discount_squared
+                * (bmax_squared + median_term)
+                / denominator
+            )
         raise ValueError(f"Unsupported confirmed method: {method_id}")
 
     @staticmethod
@@ -198,6 +232,8 @@ class FormulaSimulationEngine:
             "DISCOUNT_MAX_POWER": ("n",),
             "EXPONENTIAL_SATURATING_DISCOUNT": ("k",),
             "DISCOUNT_THRESHOLD_TWO_SEGMENTS": ("first_slope", "threshold", "tail_points"),
+            "MEDIAN_NORMALIZED_EXPONENTIAL": ("k",),
+            "MEDIAN_QUADRATIC_RATIONAL": ("k",),
         }.get(method_id, ())
         errors: list[str] = []
         for name in required:
@@ -213,6 +249,17 @@ class FormulaSimulationEngine:
                 errors.append("Threshold must be within (0, 1)")
             if parameters["first_slope"] <= 0 or parameters["tail_points"] <= 0:
                 errors.append("Piecewise coefficients must be greater than zero")
+        if method_id in {
+            "MEDIAN_NORMALIZED_EXPONENTIAL",
+            "MEDIAN_QUADRATIC_RATIONAL",
+        } and not errors:
+            if parameters["k"] <= 0:
+                errors.append("Median formula coefficient k must be greater than zero")
+            bmedian_override = parameters.get("_bmedian")
+            if bmedian_override is not None and (
+                not math.isfinite(bmedian_override) or bmedian_override <= 0
+            ):
+                errors.append("Median reference must be greater than zero")
         return errors
 
     @staticmethod
