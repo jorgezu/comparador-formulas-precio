@@ -1,11 +1,12 @@
 <!doctype html>
-<html lang="es">
+<html lang="{{ locale }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
   <meta name="description" content="{{ copy.landing.meta_description }}">
   <title>{{ catalog.title }}</title>
+  <link rel="alternate" hreflang="{{ alternate_locale }}" href="{{ alternate_url }}">
   <link rel="stylesheet" href="{{ stylesheet_url }}">
 </head>
 <body class="fp-body fp-landing-page">
@@ -17,6 +18,7 @@
     <nav class="fp-nav" aria-label="{{ copy.common.navigation_aria }}">
       <a href="{{ analyzer_url }}?perfil=administracion">{{ copy.common.nav_analyzer }}</a>
       <a href="{{ lab_url }}">{{ copy.common.nav_lab }}</a>
+      <a class="fp-language-switch" href="{{ alternate_url }}" hreflang="{{ alternate_locale }}" lang="{{ alternate_locale }}" aria-label="{{ copy.common.language_label }}: {{ copy.common.switch_language }}">{{ copy.common.switch_language }}</a>
     </nav>
   </header>
 
@@ -29,7 +31,7 @@
         <a class="fp-context-link" href="{{ lab_url }}">{{ copy.landing.context_link }}</a>
       </div>
       <figure class="fp-landing-figure">
-        <img src="{{ venn_image_url }}" width="720" height="720" alt="{{ copy.landing.venn_alt }}">
+        {% if locale == "en" %}<div class="fp-venn-en" role="img" aria-label="{{ copy.landing.venn_alt }}"><span>{{ copy.landing.venn_quality }}</span><span>{{ copy.landing.venn_reliable }}</span><span>{{ copy.landing.venn_price }}</span></div>{% else %}<img src="{{ venn_image_url }}" width="720" height="720" alt="{{ copy.landing.venn_alt }}">{% endif %}
       </figure>
     </section>
 
@@ -54,7 +56,7 @@
         <h2>{{ copy.landing.equations_title }}</h2>
         <a class="fp-text-link" href="{{ lab_url }}">{{ copy.landing.equations_cta }}</a>
       </div>
-      <img src="{{ equations_image_url }}" width="2160" height="402" alt="{{ copy.landing.equations_alt }}">
+      {% if locale == "en" %}<div class="fp-equations-preview" aria-label="{{ copy.landing.equations_alt }}">{% for method in catalog.methods[:3] %}<div><strong>{{ method.name }}</strong>{{ method.equation_mathml | safe }}</div>{% endfor %}</div>{% else %}<img src="{{ equations_image_url }}" width="2160" height="402" alt="{{ copy.landing.equations_alt }}">{% endif %}
     </section>
 
     <section class="fp-landing-explainer" aria-labelledby="about-title">
@@ -74,8 +76,8 @@
   </main>
 
   <footer class="fp-footer">
-    <p>{{ copy.landing.footer_legal }}</p>
-    <p>{{ copy.landing.footer_author }} · {{ catalog.release_label }}</p>
+    <p>{{ copy.landing.footer_legal }} · <a href="{{ legal_url }}">{{ copy.common.legal_label }}</a></p>
+    <p>{% if catalog.author.linkedin_url %}<a href="{{ catalog.author.linkedin_url }}" rel="me noopener noreferrer" target="_blank">{{ copy.landing.footer_author }}</a>{% else %}{{ copy.landing.footer_author }}{% endif %} · {{ catalog.release_label }}</p>
   </footer>
 </body>
 </html>

@@ -48,7 +48,6 @@ class ContactDeliveryNotConfigured(ContactDeliveryError):
 
 @dataclass(frozen=True)
 class ContactSubmission:
-    name: str
     email: str
     profile: str
     reason: str
@@ -102,12 +101,6 @@ def validate_submission(
 ) -> ContactSubmission:
     errors: dict[str, str] = {}
     try:
-        name = _clean_text(fields.get("name", ""), 100)
-    except ValueError:
-        name = ""
-        errors["name"] = CONTACT_COPY["validation"]["name_too_long"]
-
-    try:
         email = _clean_text(fields.get("email", ""), 254)
     except ValueError:
         email = ""
@@ -150,7 +143,6 @@ def validate_submission(
     if current_time.tzinfo is None:
         current_time = current_time.replace(tzinfo=timezone.utc)
     return ContactSubmission(
-        name=name,
         email=email,
         profile=profile,
         reason=reason,
@@ -213,7 +205,6 @@ class ResendContactSender:
 
         email_copy = CONTACT_COPY["email"]
         lines = [
-            f"{email_copy['name']}: {submission.name or email_copy['not_provided']}",
             f"{email_copy['email']}: {submission.email or email_copy['not_provided']}",
             f"{email_copy['profile']}: {submission.profile_label}",
             f"{email_copy['reason']}: {submission.reason_label}",

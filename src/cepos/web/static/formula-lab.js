@@ -5,11 +5,16 @@
   if (!catalogNode || !window.FormulaFormat) return;
 
   const catalog = JSON.parse(catalogNode.textContent);
+  const locale = catalog.number_locale || "es-ES";
+  const runtimeCopy = catalog.editorial.lab_runtime;
+  const message = (template, values = {}) => Object.entries(values).reduce(
+    (text, [key, value]) => text.replaceAll(`{${key}}`, String(value)), template
+  );
   const methods = new Map(catalog.methods.map((method) => [method.method_id, method]));
   const baseColors = ["#087f8c", "#c84556", "#3568b8", "#d08a16"];
   const svgNamespace = "http://www.w3.org/2000/svg";
-  const percent = new Intl.NumberFormat("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const score = new Intl.NumberFormat("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const percent = new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const score = new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const $ = (selector) => document.querySelector(selector);
   const nodes = {
     method: $("#lab-method"),
@@ -48,6 +53,7 @@
     specialCasesSection: $("#lab-special-cases-section"),
     realCasesLink: $("#real-cases-link"),
     canonicalCards: $("#canonical-cards"),
+    languageSwitch: $(".fp-language-switch"),
   };
 
   let selectedMethodId = null;
@@ -85,7 +91,7 @@
   const selectedMethod = () => methods.get(selectedMethodId);
 
   const documentedSelection = (method, variant) => ({
-    label: variant.label.replace(" · documentada", "").replace(" · caso lineal documentado", ""),
+    label: variant.label.replace(" · documentada", "").replace(" · caso lineal documentado", "").replace(" · documented", "").replace(" · documented linear case", ""),
     selection: { method_id: method.method_id, variant_id: variant.variant_id },
     parameters: variant.parameters,
   });
@@ -105,7 +111,7 @@
         && Object.keys(left).every((key) => Math.abs(Number(left[key]) - Number(right[key])) < 1e-10);
     })) {
       series.push({
-        label: `Ajuste actual · ${naturalParameters(customParameters)}`,
+        label: `${runtimeCopy.current_adjustment} · ${naturalParameters(customParameters)}`,
         selection: { method_id: method.method_id, variant_id: "custom", parameters: customParameters },
         parameters: customParameters,
       });
@@ -126,7 +132,7 @@
       }),
     });
     const payload = await response.json();
-    if (!response.ok) throw new Error(payload.error || "No se pudo calcular la curva.");
+    if (!response.ok) throw new Error(payload.error || runtimeCopy.calculation_failed);
     return { ...series, result: payload, curve: payload.curves[0] };
   };
 
@@ -168,7 +174,7 @@
       svgElement("line", { x1: margin.left, y1: margin.top + plotHeight, x2: margin.left + plotWidth, y2: margin.top + plotHeight, class: "fp-chart-axis" }),
       svgElement("line", { x1: margin.left, y1: margin.top, x2: margin.left, y2: margin.top + plotHeight, class: "fp-chart-axis" })
     );
-    chartText(margin.left + plotWidth / 2, height - 5, "Baja teórica");
+    chartText(margin.left + plotWidth / 2, height - 5, runtimeCopy.x_axis);
     const yLabel = svgElement("text", { x: 18, y: margin.top + plotHeight / 2, transform: `rotate(-90 18 ${margin.top + plotHeight / 2})`, "text-anchor": "middle", class: "fp-chart-label" });
     yLabel.textContent = "% de Pmax";
     nodes.chart.append(yLabel);
@@ -194,7 +200,7 @@
       const zeroPoint = svgElement("circle", { cx: x(zero.discount_pct), cy: y(zero.score_pct), r: 6, class: "fp-chart-point fp-zero-point" });
       zeroPoint.style.setProperty("--series-color", color);
       const title = svgElement("title");
-      title.textContent = `${item.label}: ${score.format(zero.score_pct)} % de Pmax con baja 0 %`;
+      title.textContent = message(runtimeCopy.zero_tooltip, { label: item.label, score: score.format(zero.score_pct) });
       zeroPoint.append(title);
       nodes.chart.append(zeroPoint);
     });
@@ -203,7 +209,7 @@
       legend.style.setProperty("--series-color", baseColors[index % baseColors.length]);
       legend.append(
         element("i", "fp-series-swatch"),
-        element("span", "", `${item.label} · continua esperada${item.curve.curves_coincide ? " = resultante" : nodes.showResultingCurve.checked ? " · discontinua resultante" : ""}`)
+        element("span", "", `${item.label} · ${runtimeCopy.expected_curve}${item.curve.curves_coincide ? ` = ${runtimeCopy.curves_equal}` : nodes.showResultingCurve.checked ? ` · ${runtimeCopy.resulting_curve}` : ""}`)
       );
       return legend;
     }));
@@ -212,14 +218,14 @@
   const renderTheoryNotes = (method, series) => {
     nodes.dependency.textContent = method.reference_type;
     nodes.dependencyCopy.textContent = method.depends_on_other_offers
-      ? `${method.dependency}. Una oferta de un tercero puede desplazar la curva.`
-      : `${method.dependency}. La misma baja permanece sobre la misma curva.`;
+      ? `${method.dependency}. ${runtimeCopy.third_party_changes}`
+      : `${method.dependency}. ${runtimeCopy.third_party_stable}`;
     const primary = series.at(-1);
     const zero = primary.curve.points.reduce(
       (best, point) => Math.abs(point.discount_pct) < Math.abs(best.discount_pct) ? point : best,
       primary.curve.points[0]
     );
-    nodes.zeroScore.textContent = `${score.format(zero.score_pct)} % de Pmax`;
+    nodes.zeroScore.textContent = `${score.format(zero.score_pct)} ${runtimeCopy.of_pmax}`;
     nodes.zeroScore.classList.toggle("is-alert", zero.score_pct > 1e-8);
     nodes.zeroCopy.textContent = method.zero_discount_behavior;
     nodes.particularities.replaceChildren(...method.particularities.map((item) => element("li", "", item)));
@@ -232,7 +238,7 @@
   const calculate = async () => {
     const sequence = ++requestSequence;
     const method = selectedMethod();
-    nodes.status.textContent = "Calculando las curvas con el motor validado…";
+    nodes.status.textContent = runtimeCopy.calculating;
     nodes.status.className = "fp-status is-loading";
     try {
       const series = await Promise.all(seriesSelections(method).map(requestCurve));
@@ -240,9 +246,9 @@
       drawChart(series);
       renderTheoryNotes(method, series);
       const medianText = method.uses_median
-        ? ` · mediana observada ${percent.format(series[0].result.scenario.median_discount_pct)} %`
+        ? message(runtimeCopy.median, { value: percent.format(series[0].result.scenario.median_discount_pct) })
         : "";
-      nodes.status.textContent = `${series.length} curva${series.length === 1 ? "" : "s"} · baja máxima esperada ${percent.format(expectedBmaxPct)} % · observada ${percent.format(observedBmaxPct)} %${medianText}`;
+      nodes.status.textContent = message(runtimeCopy.status, { count: series.length, plural: series.length === 1 ? "" : "s", expected: percent.format(expectedBmaxPct), observed: percent.format(observedBmaxPct), median: medianText });
       nodes.status.className = "fp-status";
     } catch (error) {
       if (sequence !== requestSequence) return;
@@ -276,7 +282,7 @@
 
   const renderControls = (method) => {
     if (!method.parameter_fields.length) {
-      nodes.controls.replaceChildren(element("p", "fp-empty-copy", "Esta fórmula no tiene parámetros editables."));
+      nodes.controls.replaceChildren(element("p", "fp-empty-copy", runtimeCopy.no_parameters));
       return;
     }
     nodes.controls.replaceChildren(...method.parameter_fields.map((field) => {
@@ -298,7 +304,7 @@
       number.max = String(field.max);
       number.step = String(field.step);
       number.value = range.value;
-      number.setAttribute("aria-label", `${field.label} (valor)`);
+      number.setAttribute("aria-label", `${field.label} (${runtimeCopy.value})`);
       const update = (raw) => {
         const display = Number(raw);
         range.value = String(display);
@@ -321,7 +327,7 @@
     customParameters = { ...(method.variants.find((item) => item.variant_id === method.default_variant_id)?.parameters || {}) };
     nodes.method.value = method.method_id;
     nodes.type.textContent = method.reference_type;
-    nodes.type.className = `fp-type-badge is-${method.reference_type.toLowerCase()}`;
+    nodes.type.className = `fp-type-badge is-${method.reference_type_class || method.reference_type.toLowerCase()}`;
     nodes.title.textContent = method.name;
     nodes.equation.innerHTML = method.equation_mathml;
     nodes.family.textContent = method.family;
@@ -342,6 +348,11 @@
     const url = new URL(window.location.href);
     url.hash = method.method_id;
     window.history.replaceState({}, "", url);
+    if (nodes.languageSwitch) {
+      const alternate = new URL(nodes.languageSwitch.href);
+      alternate.hash = method.method_id;
+      nodes.languageSwitch.href = alternate;
+    }
     calculate();
   };
 
@@ -356,40 +367,40 @@
       details.id = `catalog-${method.method_id}`;
       const summary = element("summary");
       summary.append(
-        element("span", `fp-type-badge is-${method.reference_type.toLowerCase()}`, method.reference_type),
+        element("span", `fp-type-badge is-${method.reference_type_class || method.reference_type.toLowerCase()}`, method.reference_type),
         element("strong", "", method.name)
       );
       const body = element("div", "fp-canonical-body");
       const equation = element("div", "fp-equation-display");
       equation.innerHTML = method.equation_mathml;
       body.append(
-        element("p", "fp-canonical-family", `Familia: ${method.family}`),
+        element("p", "fp-canonical-family", `${runtimeCopy.family}: ${method.family}`),
         equation,
         element("p", "", method.description)
       );
       if (method.equation_offers_mathml && method.equation_discounts_mathml) {
         const forms = element("div", "fp-canonical-equivalents");
         const offers = element("div");
-        offers.append(element("h4", "", "En ofertas"));
+        offers.append(element("h4", "", runtimeCopy.in_offers));
         const offersEquation = element("div", "fp-equation-display");
         offersEquation.innerHTML = method.equation_offers_mathml;
         offers.append(offersEquation);
         const discounts = element("div");
-        discounts.append(element("h4", "", "En bajas"));
+        discounts.append(element("h4", "", runtimeCopy.in_discounts));
         const discountsEquation = element("div", "fp-equation-display");
         discountsEquation.innerHTML = method.equation_discounts_mathml;
         discounts.append(discountsEquation);
         forms.append(offers, discounts);
-        body.append(element("h4", "", `Grupo de equivalencia · ${method.equivalence_group}`), forms);
+        body.append(element("h4", "", `${runtimeCopy.equivalence_group} · ${method.equivalence_group}`), forms);
       }
       if (method.special_cases.length) {
-        body.append(element("h4", "", "Casos particulares"));
+        body.append(element("h4", "", runtimeCopy.special_cases));
         const list = element("ul");
         list.append(...method.special_cases.map((item) => element("li", "", item)));
         body.append(list);
       }
       if (method.discrepancies.length) {
-        body.append(element("h4", "", "Pendiente de validación documental"));
+        body.append(element("h4", "", runtimeCopy.pending_validation));
         const list = element("ul");
         list.append(...method.discrepancies.map((item) => element("li", "", item)));
         body.append(list);

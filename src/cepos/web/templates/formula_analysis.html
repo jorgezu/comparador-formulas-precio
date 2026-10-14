@@ -1,11 +1,12 @@
 <!doctype html>
-<html lang="es">
+<html lang="{{ locale }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
   <meta name="description" content="{{ copy.analysis.meta_description }}">
   <title>{{ copy.analysis.page_title }} · {{ catalog.title }}</title>
+  <link rel="alternate" hreflang="{{ alternate_locale }}" href="{{ alternate_url }}">
   <script>{{ asset_recovery_script | safe }}</script>
   <link rel="stylesheet" href="{{ stylesheet_url }}" data-formula-stylesheet>
   <script id="formula-catalog" type="application/json">{{ catalog | tojson }}</script>
@@ -21,6 +22,7 @@
     <nav class="fp-nav" aria-label="{{ copy.common.navigation_aria }}">
       <a aria-current="page" href="{{ analyzer_url }}">{{ copy.common.nav_analyzer }}</a>
       <a href="{{ lab_url }}">{{ copy.common.nav_lab }}</a>
+      <a class="fp-language-switch" href="{{ alternate_url }}" hreflang="{{ alternate_locale }}" lang="{{ alternate_locale }}" aria-label="{{ copy.common.language_label }}: {{ copy.common.switch_language }}">{{ copy.common.switch_language }}</a>
       <button class="fp-button fp-button-primary fp-report-open-button" id="report-open" type="button" aria-label="{{ copy.analysis.report_open_aria }}" disabled>{{ copy.analysis.report_open }}</button>
     </nav>
   </header>
@@ -178,7 +180,7 @@
     {% if catalog.feedback_url %}<section class="fp-commercial-cta">
       <div><p class="fp-kicker">{{ copy.analysis.commercial_kicker }}</p><h2 id="commercial-cta-title">{{ copy.analysis.profiles.administracion.commercial_title }}</h2><p id="commercial-cta-copy"></p></div>
       <div class="fp-cta-actions">
-        <a class="fp-button fp-button-primary" href="{{ catalog.feedback_urls.analisis }}" rel="noopener noreferrer">{{ copy.analysis.commercial_analysis_cta }}</a>
+        <a class="fp-button fp-button-primary" href="{{ catalog.feedback_urls.formula }}" rel="noopener noreferrer">{{ copy.analysis.commercial_analysis_cta }}</a>
         <a class="fp-button fp-button-outline" href="{{ catalog.feedback_urls.caso }}" rel="noopener noreferrer">{{ copy.analysis.commercial_case_cta }}</a>
       </div>
     </section>{% endif %}
@@ -195,6 +197,6 @@
     <div class="fp-report-document" id="report-pages"></div>
   </section>
 
-  <footer class="fp-footer"><p>{{ copy.analysis.footer }}</p><p>{{ catalog.release_label }}</p></footer>
+  <footer class="fp-footer"><p>{{ copy.analysis.footer }} · <a href="{{ legal_url }}">{{ copy.common.legal_label }}</a></p><p>{{ catalog.release_label }}</p></footer>
 </body>
 </html>

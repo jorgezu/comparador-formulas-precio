@@ -34,6 +34,8 @@ from .contact import (
     validate_submission,
 )
 from .public_copy import PUBLIC_COPY
+from .public_copy_en import PUBLIC_COPY_EN
+from .public_catalog_i18n import localise_catalog
 from .service import FormulaPriceComparatorService, FormulaWebInputError, PRODUCT_VERSION
 
 
@@ -42,7 +44,7 @@ WEB_DIR = Path(__file__).resolve().parents[1] / "web"
 TEMPLATES = Jinja2Templates(directory=str(WEB_DIR / "templates"))
 STATIC_DIR = WEB_DIR / "static"
 MAX_REQUEST_BYTES = 64 * 1024
-ASSET_VERSION = "20261013-median-formulas-ab-v2"
+ASSET_VERSION = "20261014-legal-v1"
 ASSET_RECOVERY_SCRIPT = """(() => {
   "use strict";
   const retryKey = "tenderlab-analysis-assets-retry";
@@ -58,12 +60,16 @@ ASSET_RECOVERY_SCRIPT = """(() => {
     alert.className = "fp-assets-error";
     alert.setAttribute("role", "alert");
     const title = document.createElement("strong");
-    title.textContent = "No se ha podido cargar la aplicación completa.";
+    title.textContent = document.documentElement.lang === "en"
+      ? "The complete application could not be loaded."
+      : "No se ha podido cargar la aplicación completa.";
     const detail = document.createElement("p");
-    detail.textContent = "Comprueba la conexión y vuelve a intentarlo.";
+    detail.textContent = document.documentElement.lang === "en"
+      ? "Check your connection and try again."
+      : "Comprueba la conexión y vuelve a intentarlo.";
     const button = document.createElement("button");
     button.type = "button";
-    button.textContent = "Reintentar";
+    button.textContent = document.documentElement.lang === "en" ? "Try again" : "Reintentar";
     button.addEventListener("click", () => {
       try { window.sessionStorage.removeItem(retryKey); } catch (_error) {}
       retry();
@@ -137,6 +143,28 @@ def _service(request: Request) -> FormulaPriceComparatorService:
     return request.app.state.formula_service
 
 
+def _locale(request: Request) -> str:
+    return "en" if request.url.path == "/en" or request.url.path.startswith("/en/") else "es"
+
+
+def _copy(request: Request) -> dict[str, Any]:
+    return PUBLIC_COPY_EN if _locale(request) == "en" else PUBLIC_COPY
+
+
+def _translated_path(path: str, locale: str) -> str:
+    routes = {
+        "/formulas": "/en/formulas",
+        "/formulas/analizador": "/en/formulas/analyzer",
+        "/formulas/laboratorio": "/en/formulas/laboratory",
+        "/contacto": "/en/contact",
+        "/informacion-legal": "/en/legal",
+    }
+    if locale == "es":
+        return routes.get(path, "/en/formulas")
+    reverse = {value: key for key, value in routes.items()}
+    return reverse.get(path, "/formulas")
+
+
 def _feedback_url(base_url: str, reason: str, origin: str) -> str:
     if not base_url:
         return ""
@@ -153,37 +181,52 @@ def _feedback_url(base_url: str, reason: str, origin: str) -> str:
 
 
 def _page_context(request: Request) -> dict[str, Any]:
-    catalog = _service(request).public_catalog()
+    locale = _locale(request)
+    copy = _copy(request)
+    catalog = localise_catalog(_service(request).public_catalog(), locale)
     feedback_url = str(catalog.get("feedback_url", ""))
+    if locale == "en" and feedback_url == "/contacto":
+        feedback_url = "/en/contact"
     origin = request.url.path
     if request.url.query:
         origin = f"{origin}?{request.url.query}"
     catalog["feedback_urls"] = {
         reason: _feedback_url(feedback_url, reason, origin)
-        for reason in ("feedback", "formula", "caso", "analisis")
+        for reason in ("feedback", "formula", "caso", "privacidad")
     }
     for internal_key in ("product_version", "engine_version", "canonical_catalog_version"):
         catalog.pop(internal_key, None)
-    catalog["release_label"] = PUBLIC_COPY["common"]["release_label"]
+    catalog["release_label"] = copy["common"]["release_label"]
+    catalog["locale"] = locale
+    catalog["number_locale"] = "en-GB" if locale == "en" else "es-ES"
     catalog["editorial"] = {
-        "analysis_profiles": PUBLIC_COPY["analysis"]["profiles"],
+        "analysis_profiles": copy["analysis"]["profiles"],
         "analysis_simulation": {
-            key: value for key, value in PUBLIC_COPY["analysis"].items()
+            key: value for key, value in copy["analysis"].items()
             if key.startswith("simulation_")
         },
         "analysis_chart": {
-            key: value for key, value in PUBLIC_COPY["analysis"].items()
+            key: value for key, value in copy["analysis"].items()
             if key.startswith("detail_zoom_")
         },
         "analysis_report": {
-            key: value for key, value in PUBLIC_COPY["analysis"].items()
+            key: value for key, value in copy["analysis"].items()
             if key.startswith("report_")
         },
+        "analysis_runtime": copy["analysis"]["runtime"],
+        "lab_runtime": copy["lab"]["runtime"],
     }
-    catalog["api_url"] = "/api/formula-price-comparator/compare"
-    catalog["home_url"] = "/formulas"
-    catalog["analyzer_url"] = "/formulas/analizador"
-    catalog["lab_url"] = "/formulas/laboratorio"
+    catalog["api_url"] = f"/api/formula-price-comparator/compare?lang={locale}"
+    if locale == "en":
+        catalog["home_url"] = "/en/formulas"
+        catalog["analyzer_url"] = "/en/formulas/analyzer"
+        catalog["lab_url"] = "/en/formulas/laboratory"
+        catalog["legal_url"] = "/en/legal"
+    else:
+        catalog["home_url"] = "/formulas"
+        catalog["analyzer_url"] = "/formulas/analizador"
+        catalog["lab_url"] = "/formulas/laboratorio"
+        catalog["legal_url"] = "/informacion-legal"
     retry_token = request.query_params.get("_assets", "")
     retry_suffix = f"&retry={retry_token}" if retry_token.isdigit() else ""
     return {
@@ -192,7 +235,13 @@ def _page_context(request: Request) -> dict[str, Any]:
         "home_url": catalog["home_url"],
         "analyzer_url": catalog["analyzer_url"],
         "lab_url": catalog["lab_url"],
-        "copy": PUBLIC_COPY,
+        "legal_url": catalog["legal_url"],
+        "copy": copy,
+        "locale": locale,
+        "alternate_locale": "es" if locale == "en" else "en",
+        "alternate_url": _translated_path(request.url.path, locale) + (
+            f"?{request.url.query}" if request.url.query else ""
+        ),
         "stylesheet_url": f"/static/formula-public.css?v={ASSET_VERSION}{retry_suffix}",
         "format_script_url": f"/static/formula-format.js?v={ASSET_VERSION}{retry_suffix}",
     }
@@ -239,6 +288,15 @@ def formula_lab_page(request: Request) -> Response:
     )
 
 
+def legal_page(request: Request) -> Response:
+    return TEMPLATES.TemplateResponse(
+        request=request,
+        name="formula_legal.html",
+        context=_page_context(request),
+        headers={"Cache-Control": "no-store"},
+    )
+
+
 def _contact_sender_configured(sender: Any) -> bool:
     configured = getattr(sender, "configured", None)
     return bool(configured()) if callable(configured) else True
@@ -255,7 +313,6 @@ def _contact_values(request: Request) -> dict[str, str]:
     if not origin:
         origin = request.headers.get("referer", "").strip() or "/contacto"
     return {
-        "name": "",
         "email": "",
         "profile": profile,
         "reason": reason,
@@ -263,6 +320,17 @@ def _contact_values(request: Request) -> dict[str, str]:
         "reference_url": "",
         "origin": origin[:500],
     }
+
+
+def _localise_contact_errors(
+    errors: dict[str, str], copy: dict[str, Any]
+) -> dict[str, str]:
+    if copy is PUBLIC_COPY:
+        return errors
+    spanish = PUBLIC_COPY["contact"]["validation"]
+    translated = copy["contact"]["validation"]
+    by_message = {message: translated[key] for key, message in spanish.items()}
+    return {field: by_message.get(message, message) for field, message in errors.items()}
 
 
 def _contact_response(
@@ -275,18 +343,20 @@ def _contact_response(
     status_code: int = 200,
 ) -> Response:
     context = _page_context(request)
+    copy = _copy(request)
     context.update(
         {
             "values": values,
             "errors": errors or {},
             "form_error": form_error,
             "success": success,
-            "profile_options": PROFILE_OPTIONS,
-            "reason_options": REASON_OPTIONS,
+            "profile_options": copy["contact"]["profiles"],
+            "reason_options": copy["contact"]["reasons"],
             "delivery_configured": _contact_sender_configured(
                 request.app.state.contact_sender
             ),
-            "release_label": PUBLIC_COPY["common"]["release_label"],
+            "release_label": copy["common"]["release_label"],
+            "contact_action": "/en/contact" if _locale(request) == "en" else "/contacto",
         }
     )
     return TEMPLATES.TemplateResponse(
@@ -303,10 +373,11 @@ def contact_page(request: Request) -> Response:
 
 
 async def _read_contact_fields(request: Request) -> dict[str, str]:
+    copy = _copy(request)
     content_type = request.headers.get("content-type", "").split(";", 1)[0].strip().lower()
     if content_type != "application/x-www-form-urlencoded":
         raise ContactValidationError(
-            {"form": PUBLIC_COPY["contact"]["validation"]["invalid_format"]}
+            {"form": copy["contact"]["validation"]["invalid_format"]}
         )
     content_length = request.headers.get("content-length")
     if content_length:
@@ -314,11 +385,11 @@ async def _read_contact_fields(request: Request) -> dict[str, str]:
             parsed_length = int(content_length)
         except ValueError as exc:
             raise ContactValidationError(
-                {"form": PUBLIC_COPY["contact"]["validation"]["invalid_size"]}
+                {"form": copy["contact"]["validation"]["invalid_size"]}
             ) from exc
         if parsed_length > CONTACT_FORM_MAX_BYTES:
             raise ContactValidationError(
-                {"form": PUBLIC_COPY["contact"]["validation"]["too_large"]}
+                {"form": copy["contact"]["validation"]["too_large"]}
             )
 
     body = bytearray()
@@ -326,7 +397,7 @@ async def _read_contact_fields(request: Request) -> dict[str, str]:
         body.extend(chunk)
         if len(body) > CONTACT_FORM_MAX_BYTES:
             raise ContactValidationError(
-                {"form": PUBLIC_COPY["contact"]["validation"]["too_large"]}
+                {"form": copy["contact"]["validation"]["too_large"]}
             )
     try:
         pairs = parse_qsl(
@@ -334,10 +405,9 @@ async def _read_contact_fields(request: Request) -> dict[str, str]:
         )
     except (UnicodeDecodeError, ValueError) as exc:
         raise ContactValidationError(
-            {"form": PUBLIC_COPY["contact"]["validation"]["invalid_format"]}
+            {"form": copy["contact"]["validation"]["invalid_format"]}
         ) from exc
     allowed = {
-        "name",
         "email",
         "profile",
         "reason",
@@ -348,12 +418,13 @@ async def _read_contact_fields(request: Request) -> dict[str, str]:
     }
     if any(key not in allowed for key, _ in pairs):
         raise ContactValidationError(
-            {"form": PUBLIC_COPY["contact"]["validation"]["invalid_fields"]}
+            {"form": copy["contact"]["validation"]["invalid_fields"]}
         )
     return dict(pairs)
 
 
 async def contact_submit(request: Request) -> Response:
+    copy = _copy(request)
     fallback = _contact_values(request)
     try:
         fields = await _read_contact_fields(request)
@@ -363,7 +434,7 @@ async def contact_submit(request: Request) -> Response:
             values=fallback,
             errors=exc.errors,
             form_error=exc.errors.get(
-                "form", PUBLIC_COPY["contact"]["validation"]["review_fields"]
+                "form", copy["contact"]["validation"]["review_fields"]
             ),
             status_code=422,
         )
@@ -375,11 +446,12 @@ async def contact_submit(request: Request) -> Response:
     try:
         submission = validate_submission(fields)
     except ContactValidationError as exc:
+        errors = _localise_contact_errors(exc.errors, copy)
         return _contact_response(
             request,
             values=values,
-            errors=exc.errors,
-            form_error=PUBLIC_COPY["contact"]["validation"]["review_fields"],
+            errors=errors,
+            form_error=copy["contact"]["validation"]["review_fields"],
             status_code=422,
         )
 
@@ -388,7 +460,7 @@ async def contact_submit(request: Request) -> Response:
         return _contact_response(
             request,
             values=values,
-            form_error=PUBLIC_COPY["contact"]["delivery"]["rate_limited"],
+            form_error=copy["contact"]["delivery"]["rate_limited"],
             status_code=429,
         )
     try:
@@ -397,46 +469,62 @@ async def contact_submit(request: Request) -> Response:
         return _contact_response(
             request,
             values=values,
-            form_error=PUBLIC_COPY["contact"]["delivery"]["not_configured"],
+            form_error=copy["contact"]["delivery"]["not_configured"],
             status_code=503,
         )
     except ContactDeliveryError:
         return _contact_response(
             request,
             values=values,
-            form_error=PUBLIC_COPY["contact"]["delivery"]["failed"],
+            form_error=copy["contact"]["delivery"]["failed"],
             status_code=502,
         )
     return _contact_response(request, values=values, success=True)
 
 
 async def compare(request: Request) -> Response:
+    is_english = request.query_params.get("lang") == "en"
+    errors = {
+        "json": "The request must use JSON.",
+        "large": "The request is too large.",
+        "length": "The request length is not valid.",
+        "valid_json": "The request must contain valid JSON.",
+        "object": "The request must be a JSON object.",
+        "scenario": "The scenario could not be evaluated with the selected formulas and parameters.",
+    } if is_english else {
+        "json": "La solicitud debe usar JSON.",
+        "large": "La solicitud es demasiado grande.",
+        "length": "La longitud de la solicitud no es válida.",
+        "valid_json": "La solicitud debe ser JSON válido.",
+        "object": "La solicitud debe ser un objeto JSON.",
+        "scenario": "El escenario no puede evaluarse con las fórmulas y parámetros seleccionados.",
+    }
     content_type = request.headers.get("content-type", "").split(";", 1)[0].strip().lower()
     if content_type != "application/json":
-        return JSONResponse({"error": "La solicitud debe usar JSON."}, status_code=415)
+        return JSONResponse({"error": errors["json"]}, status_code=415)
     content_length = request.headers.get("content-length")
     if content_length:
         try:
             if int(content_length) > MAX_REQUEST_BYTES:
-                return JSONResponse({"error": "La solicitud es demasiado grande."}, status_code=413)
+                return JSONResponse({"error": errors["large"]}, status_code=413)
         except ValueError:
-            return JSONResponse({"error": "La longitud de la solicitud no es válida."}, status_code=400)
+            return JSONResponse({"error": errors["length"]}, status_code=400)
 
     body = bytearray()
     async for chunk in request.stream():
         body.extend(chunk)
         if len(body) > MAX_REQUEST_BYTES:
-            return JSONResponse({"error": "La solicitud es demasiado grande."}, status_code=413)
+            return JSONResponse({"error": errors["large"]}, status_code=413)
     try:
         payload = json.loads(body)
     except (json.JSONDecodeError, UnicodeDecodeError):
-        return JSONResponse({"error": "La solicitud debe ser JSON válido."}, status_code=400)
+        return JSONResponse({"error": errors["valid_json"]}, status_code=400)
     if not isinstance(payload, dict):
-        return JSONResponse({"error": "La solicitud debe ser un objeto JSON."}, status_code=400)
+        return JSONResponse({"error": errors["object"]}, status_code=400)
     try:
         result = await run_in_threadpool(_service(request).compare, payload)
     except FormulaWebInputError as exc:
-        return JSONResponse({"error": str(exc)}, status_code=422)
+        return JSONResponse({"error": errors["scenario"] if is_english else str(exc)}, status_code=422)
     return JSONResponse(result)
 
 
@@ -537,6 +625,14 @@ def create_public_app(
             Route("/formulas/laboratorio", formula_lab_page, methods=["GET"]),
             Route("/contacto", contact_page, methods=["GET"]),
             Route("/contacto", contact_submit, methods=["POST"]),
+            Route("/informacion-legal", legal_page, methods=["GET"]),
+            Route("/en", formula_page, methods=["GET"]),
+            Route("/en/formulas", formula_page, methods=["GET"]),
+            Route("/en/formulas/analyzer", formula_analysis_page, methods=["GET"]),
+            Route("/en/formulas/laboratory", formula_lab_page, methods=["GET"]),
+            Route("/en/contact", contact_page, methods=["GET"]),
+            Route("/en/contact", contact_submit, methods=["POST"]),
+            Route("/en/legal", legal_page, methods=["GET"]),
             Route("/api/formula-price-comparator/compare", compare, methods=["POST"]),
             Route("/static/formula-public.css", stylesheet, methods=["GET"]),
             Route("/static/formula-public-analysis.js", script, methods=["GET"]),

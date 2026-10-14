@@ -5,18 +5,24 @@
   if (!catalogNode || !window.FormulaFormat) return;
 
   const catalog = JSON.parse(catalogNode.textContent);
+  const locale = catalog.number_locale || "es-ES";
   const colors = ["#087f8c", "#c84556", "#3568b8", "#d08a16", "#3d7f58", "#785c99", "#8b5a3c", "#a23b72", "#5f6f2a"];
   const contrastColors = ["#111111", "#e69f00", "#0072b2", "#009e73", "#6b4c9a", "#cc79a7", "#d55e00", "#56b4e9", "#777777"];
   let colorByMethod = new Map(catalog.methods.map((method, index) => [method.method_id, colors[index]]));
-  const euro = new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const percent = new Intl.NumberFormat("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const summaryNumber = new Intl.NumberFormat("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const euro = new Intl.NumberFormat(locale, { style: "currency", currency: "EUR", minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const percent = new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const summaryNumber = new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const svgNamespace = "http://www.w3.org/2000/svg";
   const $ = (selector) => document.querySelector(selector);
   const deepCopy = (value) => JSON.parse(JSON.stringify(value));
   const simulationCopy = catalog.editorial.analysis_simulation;
   const chartCopy = catalog.editorial.analysis_chart;
   const reportCopy = catalog.editorial.analysis_report;
+  const runtimeCopy = catalog.editorial.analysis_runtime;
+  const message = (template, values = {}) => Object.entries(values).reduce(
+    (text, [key, value]) => text.replaceAll(`{${key}}`, String(value)),
+    template
+  );
   const defaultCaseId = "case-1";
 
   const nodes = {
@@ -81,6 +87,7 @@
     reportPages: $("#report-pages"),
     reportClose: $("#report-close"),
     reportPrint: $("#report-print"),
+    languageSwitch: $(".fp-language-switch"),
   };
   const originalDataTitle = nodes.dataTitle.textContent;
   const originalChartKicker = nodes.chartKicker.textContent;
@@ -250,7 +257,7 @@
     const groups = ["SUMINISTROS", "OBRAS", "SERVICIOS"];
     nodes.caseSelector.replaceChildren(...groups.map((type) => {
       const group = element("optgroup");
-      group.label = type.charAt(0) + type.slice(1).toLowerCase();
+      group.label = runtimeCopy.contract_types[type] || type;
       catalog.cases.filter((item) => item.contract_type === type).forEach((item) => {
         const option = element("option", "", item.label);
         option.value = item.case_id;
@@ -267,7 +274,7 @@
   };
 
   const publicCaseHeading = (selectedCase) => selectedCase.complexity_level
-    ? `${selectedCase.label} · Complejidad ${selectedCase.complexity_level.toLocaleLowerCase("es-ES")}`
+    ? `${selectedCase.label} · ${runtimeCopy.complexity} ${selectedCase.complexity_level.toLocaleLowerCase(locale)}`
     : selectedCase.label;
 
   const renderCaseStrip = () => {
@@ -279,12 +286,12 @@
       : publicCaseHeading(currentCase);
     nodes.caseNote.textContent = simulationActive ? simulationCopy.simulation_note : currentCase.note;
     nodes.caseStripFacts.replaceChildren(
-      stripFact("Tipo", currentCase.contract_type),
-      stripFact("Precio de licitación", euro.format(currentCase.tender_price)),
-      stripFact("Puntos precio", summaryNumber.format(currentCase.pmax)),
-      stripFact("Ofertas", String(currentCase.offers.length)),
-      stripFact("Fórmula real", actualMethod?.name || currentCase.actual_method_name),
-      stripFact("Adjudicatario real", currentCase.actual_awardee, true)
+      stripFact(runtimeCopy.type, runtimeCopy.contract_types[currentCase.contract_type] || currentCase.contract_type),
+      stripFact(runtimeCopy.tender_price, euro.format(currentCase.tender_price)),
+      stripFact(runtimeCopy.price_points, summaryNumber.format(currentCase.pmax)),
+      stripFact(runtimeCopy.offers, String(currentCase.offers.length)),
+      stripFact(runtimeCopy.actual_formula, actualMethod?.name || currentCase.actual_method_name),
+      stripFact(runtimeCopy.actual_awardee, currentCase.actual_awardee, true)
     );
   };
 
@@ -489,23 +496,23 @@
     );
     const median = result?.scenario.median_discount_pct ?? observedBmedian();
     const summary = [
-      element("span", "", `Bmax esperada: ${summaryNumber.format(expectedBmaxPct)} %`),
-      element("span", "", `Bmax real: ${percent.format(observed)} %`),
+      element("span", "", `${runtimeCopy.expected_bmax}: ${summaryNumber.format(expectedBmaxPct)} %`),
+      element("span", "", `${runtimeCopy.actual_bmax}: ${percent.format(observed)} %`),
     ];
     if (medianMethodActive) {
-      summary.push(element("span", "", `Bmed real: ${percent.format(median)} %`));
+      summary.push(element("span", "", `${runtimeCopy.actual_median}: ${percent.format(median)} %`));
     }
-    summary.push(element("strong", "", `Diferencia: ${signedPp(observed - expectedBmaxPct)}`));
+    summary.push(element("strong", "", `${runtimeCopy.difference}: ${signedPp(observed - expectedBmaxPct)}`));
     nodes.expectedBmaxValue.textContent = `${summaryNumber.format(expectedBmaxPct)} %`;
-    nodes.bmaxInlineComparison.textContent = `Esperada ${summaryNumber.format(expectedBmaxPct)} % → observada ${percent.format(observed)} %`;
+    nodes.bmaxInlineComparison.textContent = message(runtimeCopy.expected_to_actual, { expected: summaryNumber.format(expectedBmaxPct), actual: percent.format(observed) });
     nodes.bmaxSummary.replaceChildren(...summary);
   };
 
   const equationDetails = (method) => {
     const details = element("details", "fp-equation-popover");
     const summary = element("summary");
-    summary.setAttribute("aria-label", `Ver ecuación de ${method.name}`);
-    summary.title = `Ver ecuación de ${method.name}`;
+    summary.setAttribute("aria-label", message(runtimeCopy.view_equation, { name: method.name }));
+    summary.title = message(runtimeCopy.view_equation, { name: method.name });
     summary.textContent = "i";
     const body = element("div", "fp-equation-popover-body");
     body.append(element("h3", "", method.name));
@@ -516,12 +523,12 @@
       element("strong", "", `${method.reference_type} · ${method.dependency}`)
     );
     if (method.equation_offers_plain && method.equation_discounts_plain) {
-      body.append(element("p", "fp-equivalent-note", "También tiene una forma equivalente: misma fórmula, distintas variables."));
+      body.append(element("p", "fp-equivalent-note", runtimeCopy.equivalent_form));
     }
     if (method.special_cases.length) {
       body.append(element("p", "fp-special-case-note", method.special_cases[0]));
     }
-    const labLink = element("a", "fp-popover-link", "Ver en el Laboratorio");
+    const labLink = element("a", "fp-popover-link", runtimeCopy.view_in_lab);
     labLink.href = `${catalog.lab_url}#${method.method_id}`;
     body.append(labLink);
     details.append(summary, body);
@@ -537,13 +544,13 @@
       const checkbox = element("input");
       checkbox.type = "checkbox";
       checkbox.checked = state.selected;
-      checkbox.setAttribute("aria-label", `Mostrar ${method.name}`);
+      checkbox.setAttribute("aria-label", message(runtimeCopy.show_method, { name: method.name }));
       checkbox.addEventListener("change", () => {
         state.selected = checkbox.checked;
         if (!activeMethods().length) {
           state.selected = true;
           checkbox.checked = true;
-          setStatus("Debe permanecer visible al menos una fórmula.", "error");
+          setStatus(runtimeCopy.one_formula_required, "error");
           return;
         }
         if (!rankingMethodId || !methodState.get(rankingMethodId)?.selected) {
@@ -568,7 +575,7 @@
   const renderParameters = () => {
     const parameterized = activeMethods().filter((method) => method.parameter_fields.length);
     if (!parameterized.length) {
-      nodes.parameterList.replaceChildren(element("p", "fp-empty-copy", "Las fórmulas activas no tienen parámetros editables."));
+      nodes.parameterList.replaceChildren(element("p", "fp-empty-copy", runtimeCopy.no_parameters));
       return;
     }
     nodes.parameterList.replaceChildren(...parameterized.map((method) => {
@@ -577,13 +584,13 @@
       group.style.setProperty("--series-color", colorByMethod.get(method.method_id));
       group.append(element("strong", "", method.name));
       const variant = element("select");
-      variant.setAttribute("aria-label", `Configuración de ${method.name}`);
+      variant.setAttribute("aria-label", message(runtimeCopy.method_configuration, { name: method.name }));
       method.variants.forEach((item) => {
         const option = element("option", "", item.label);
         option.value = item.variant_id;
         variant.append(option);
       });
-      const custom = element("option", "", "Valores personalizados");
+      const custom = element("option", "", runtimeCopy.custom_values);
       custom.value = "custom";
       variant.append(custom);
       variant.value = state.variant_id;
@@ -609,7 +616,7 @@
         group.append(element(
           "p",
           "fp-parameter-derived",
-          `n se calcula automáticamente: Bmax esperada ${summaryNumber.format(expectedBmaxPct)} % → n = ${summaryNumber.format(expectedBmaxPct / 5)}; Bmax real ${summaryNumber.format(observedBmax())} % → n = ${summaryNumber.format(observedBmax() / 5)}.`
+          message(runtimeCopy.derived_n, { expected: summaryNumber.format(expectedBmaxPct), expected_n: summaryNumber.format(expectedBmaxPct / 5), actual: summaryNumber.format(observedBmax()), actual_n: summaryNumber.format(observedBmax() / 5) })
         ));
         return group;
       }
@@ -626,7 +633,7 @@
         input.max = String(field.max);
         input.step = String(field.step);
         input.value = String(Number(state.parameters[field.name]) * Number(field.display_factor || 1));
-        input.setAttribute("aria-label", `${field.label} de ${method.name}`);
+        input.setAttribute("aria-label", message(runtimeCopy.parameter_for_method, { parameter: field.label, method: method.name }));
         input.addEventListener("input", () => {
           state.variant_id = "custom";
           state.parameters[field.name] = Number(input.value) / Number(field.display_factor || 1);
@@ -658,7 +665,7 @@
       input.value = String(offer.price);
       input.disabled = offer.excluded;
       input.dataset.offerPrice = offer.offer_id;
-      input.setAttribute("aria-label", `Importe de ${offer.name}`);
+      input.setAttribute("aria-label", message(runtimeCopy.amount_for_offer, { name: offer.name }));
       input.addEventListener("input", () => {
         offer.price = Number(input.value);
         syncOfferPriceInputs(offer.offer_id, offer.price, input);
@@ -666,11 +673,11 @@
       });
       const toggle = element("button", "fp-icon-button", offer.excluded ? "↺" : "×");
       toggle.type = "button";
-      toggle.title = offer.excluded ? `Restaurar ${offer.name}` : `Excluir ${offer.name}`;
+      toggle.title = offer.excluded ? message(runtimeCopy.restore_offer, { name: offer.name }) : message(runtimeCopy.exclude_offer, { name: offer.name });
       toggle.setAttribute("aria-label", toggle.title);
       toggle.addEventListener("click", () => {
         if (!offer.excluded && activeCount <= 2) {
-          setStatus("Deben quedar al menos dos ofertas activas.", "error");
+          setStatus(runtimeCopy.minimum_two_offers, "error");
           return;
         }
         offer.excluded = !offer.excluded;
@@ -694,7 +701,7 @@
     if (!methods.length) return;
     if (requestController) requestController.abort();
     requestController = new AbortController();
-    setStatus("Actualizando curvas y clasificación…", "loading");
+    setStatus(runtimeCopy.updating, "loading");
     try {
       const response = await fetch(catalog.api_url, {
         method: "POST",
@@ -708,10 +715,14 @@
         signal: requestController.signal,
       });
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error || "No se pudo calcular el escenario.");
+      if (!response.ok) throw new Error(result.error || runtimeCopy.calculation_failed);
+      result.methods = result.methods.map((method) => {
+        const localised = catalog.methods.find((item) => item.method_id === method.method_id);
+        return localised ? { ...method, ...localised, curve: method.curve } : method;
+      });
       lastResult = result;
       renderResult(result);
-      setStatus(`${result.scenario.offer_count} ofertas · ${result.methods.length} fórmulas · actualizado`);
+      setStatus(message(runtimeCopy.updated, { offers: result.scenario.offer_count, methods: result.methods.length }));
     } catch (error) {
       if (error.name !== "AbortError") setStatus(error.message, "error");
     }
@@ -726,7 +737,7 @@
     ),
   ]));
 
-  const formatScore = (value, decimals) => new Intl.NumberFormat("es-ES", {
+  const formatScore = (value, decimals) => new Intl.NumberFormat(locale, {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   }).format(value);
@@ -754,6 +765,12 @@
       : result.methods[0].method_id;
     nodes.rankingFormula.value = rankingMethodId;
     nodes.understandFormulaLink.href = `${catalog.lab_url}#${rankingMethodId}`;
+    if (nodes.languageSwitch) {
+      const alternate = new URL(nodes.languageSwitch.href);
+      alternate.searchParams.set("perfil", profile);
+      alternate.searchParams.set("formula", rankingMethodId);
+      nodes.languageSwitch.href = alternate;
+    }
   };
 
   const renderPermanentResults = (result) => {
@@ -762,16 +779,16 @@
     const precision = window.FormulaFormat.adaptiveDecimals(ranking.map((row) => row.value), 2, 4).decimals;
     const winner = ranking[0];
     nodes.simulatedWinner.textContent = winner?.name || "—";
-    nodes.winnerFormulaLabel.textContent = `${method.name} · ${rankingMode === "total" ? "precio + puntos NO precio" : "sólo precio"}`;
+    nodes.winnerFormulaLabel.textContent = `${method.name} · ${rankingMode === "total" ? runtimeCopy.price_plus_non_price : runtimeCopy.price_only}`;
     nodes.baselineCompare.className = `fp-baseline-compare${winner?.name === currentCase.actual_awardee ? " is-same" : " is-changed"}`;
     nodes.baselineCompare.replaceChildren(
-      element("span", "", `Adjudicatario real: ${currentCase.actual_awardee}`),
+      element("span", "", `${runtimeCopy.actual_awardee}: ${currentCase.actual_awardee}`),
       element(
         "strong",
         "",
         winner?.name === currentCase.actual_awardee
-          ? "El ganador no cambia."
-          : `La simulación sitúa primero a ${winner?.name}.`
+          ? runtimeCopy.winner_unchanged
+          : message(runtimeCopy.simulation_first, { name: winner?.name })
       )
     );
     const activeOffers = offers.filter((offer) => !offer.excluded);
@@ -790,9 +807,9 @@
       const identity = element("span", "fp-rank-identity");
       identity.append(element("strong", "", row.name));
       const tags = [];
-      if (row.name === currentCase.actual_awardee) tags.push("real");
-      if (row.name === technical?.name) tags.push("técnica");
-      if (row.name === cheapest?.name) tags.push("económica");
+      if (row.name === currentCase.actual_awardee) tags.push(runtimeCopy.tag_actual);
+      if (row.name === technical?.name) tags.push(runtimeCopy.tag_technical);
+      if (row.name === cheapest?.name) tags.push(runtimeCopy.tag_economic);
       if (tags.length) identity.append(element("small", "", tags.join(" · ")));
       item.append(place, identity, element("strong", "fp-rank-score", formatScore(row.value, precision)));
       return item;
@@ -800,14 +817,14 @@
     const values = ranking.map((row) => row.value);
     const minimum = Math.min(...values);
     const maximum = Math.max(...values);
-    nodes.scoreSpread.textContent = `Las ofertas quedan entre ${summaryNumber.format(minimum)} y ${summaryNumber.format(maximum)} puntos. ${summaryNumber.format(maximum - minimum)} puntos separan la menor y la mayor puntuación.`;
+    nodes.scoreSpread.textContent = message(runtimeCopy.score_spread, { minimum: summaryNumber.format(minimum), maximum: summaryNumber.format(maximum), spread: summaryNumber.format(maximum - minimum) });
   };
 
   const renderImpact = (result) => {
     if (scenariosMatch()) {
       nodes.impactSummary.textContent = simulationActive
         ? simulationCopy.simulation_unchanged
-        : "Estás viendo la configuración real del caso.";
+        : runtimeCopy.real_configuration;
       return;
     }
     if (JSON.stringify(baseline) === JSON.stringify(currentScenario())) {
@@ -816,12 +833,12 @@
     }
     const impact = result.impacts.find((item) => item.method_id === rankingMethodId) || result.impacts[0];
     if (!impact) {
-      nodes.impactSummary.textContent = "La simulación difiere del caso real.";
+      nodes.impactSummary.textContent = runtimeCopy.simulation_differs;
       return;
     }
     nodes.impactSummary.textContent = impact.unchanged_price_changed_count
-      ? `${impact.unchanged_price_changed_count} ofertas cambian de puntuación aunque su importe no se haya modificado.`
-      : "Las ofertas con el mismo importe conservan su puntuación.";
+      ? message(runtimeCopy.unchanged_changed, { count: impact.unchanged_price_changed_count })
+      : runtimeCopy.unchanged_stable;
   };
 
   const clearChart = () => {
@@ -861,9 +878,9 @@
       svgElement("line", { x1: margin.left, y1: margin.top + plotHeight, x2: margin.left + plotWidth, y2: margin.top + plotHeight, class: "fp-chart-axis" }),
       svgElement("line", { x1: margin.left, y1: margin.top, x2: margin.left, y2: margin.top + plotHeight, class: "fp-chart-axis" })
     );
-    chartText(margin.left + plotWidth / 2, height - 5, "Baja sobre el precio de licitación");
+    chartText(margin.left + plotWidth / 2, height - 5, runtimeCopy.x_axis);
     const yLabel = svgElement("text", { x: 18, y: margin.top + plotHeight / 2, transform: `rotate(-90 18 ${margin.top + plotHeight / 2})`, "text-anchor": "middle", class: "fp-chart-label" });
-    yLabel.textContent = "Puntos por precio";
+    yLabel.textContent = runtimeCopy.y_axis;
     nodes.chart.append(yLabel);
     return { x, y, margin, plotWidth, plotHeight, xMax: safeXMax, yMax };
   };
@@ -1257,14 +1274,14 @@
         const difference = row.score_differences[method.method_id];
         const hover = [
           `${row.name} · ${euro.format(row.price)}`,
-          `Baja: ${percent.format(row.discount_pct)} %`,
-          `Puntuación real: ${summaryNumber.format(row.scores[method.method_id])} puntos`,
+          `${runtimeCopy.discount}: ${percent.format(row.discount_pct)} %`,
+          `${runtimeCopy.actual_score}: ${summaryNumber.format(row.scores[method.method_id])}`,
           theoretical === null
-            ? "Puntuación teórica: fuera del dominio de la Bmax esperada"
-            : `Puntuación sobre la curva teórica: ${summaryNumber.format(theoretical)} puntos`,
+            ? runtimeCopy.theoretical_outside
+            : `${runtimeCopy.theoretical_score}: ${summaryNumber.format(theoretical)}`,
           difference === null
             ? null
-            : `Diferencia: ${difference >= 0 ? "+" : "−"}${summaryNumber.format(Math.abs(difference))} puntos`,
+            : `${runtimeCopy.difference}: ${difference >= 0 ? "+" : "−"}${summaryNumber.format(Math.abs(difference))}`,
         ].filter(Boolean).join("\n");
         const point = svgElement("circle", {
           cx: axes.x(row.discount_pct),
@@ -1330,7 +1347,7 @@
   const renderSelectedOffer = (result) => {
     const row = result.rows.find((item) => item.offer_id === selectedOfferId);
     if (!row) {
-      nodes.selectedOffer.textContent = "Selecciona un punto LIC-n para fijar sus datos.";
+      nodes.selectedOffer.textContent = runtimeCopy.selected_offer_help;
       return;
     }
     const focused = currentMethod(result);
@@ -1339,15 +1356,15 @@
     nodes.selectedOffer.replaceChildren(
       element("strong", "", row.name),
       element("span", "", euro.format(row.price)),
-      element("span", "", `Baja ${percent.format(row.discount_pct)} %`),
-      element("span", "", `${focused.short_name} real: ${summaryNumber.format(row.scores[focused.method_id])} pt`),
+      element("span", "", `${runtimeCopy.discount} ${percent.format(row.discount_pct)} %`),
+      element("span", "", `${focused.short_name} · ${runtimeCopy.actual_score}: ${summaryNumber.format(row.scores[focused.method_id])}`),
       element("span", "", theoretical === null
-        ? "Curva esperada: fuera de dominio"
-        : `Curva esperada: ${summaryNumber.format(theoretical)} pt`),
+        ? `${runtimeCopy.expected_curve}: ${runtimeCopy.outside_domain}`
+        : `${runtimeCopy.expected_curve}: ${summaryNumber.format(theoretical)}`),
       ...(difference === null ? [] : [element(
         "span",
         "",
-        `Diferencia: ${difference >= 0 ? "+" : "−"}${summaryNumber.format(Math.abs(difference))} pt`
+        `${runtimeCopy.difference}: ${difference >= 0 ? "+" : "−"}${summaryNumber.format(Math.abs(difference))}`
       )])
     );
   };
@@ -1363,13 +1380,13 @@
         element("td", "", euro.format(Number(nodes.tenderPrice.value) - offer.price)),
         element("td", "", `${percent.format(discount)} %`),
         element("td", "", summaryNumber.format(offer.non_price_points)),
-        element("td", "", activeIds.has(offer.offer_id) ? "Incluida" : "Excluida")
+        element("td", "", activeIds.has(offer.offer_id) ? runtimeCopy.included : runtimeCopy.excluded)
       );
       return row;
     }));
     const precision = scoreDecimals(result);
     const head = element("tr");
-    head.append(element("th", "", "Oferta"));
+    head.append(element("th", "", runtimeCopy.offer));
     result.methods.forEach((method) => head.append(element("th", "", method.name)));
     nodes.scoresHead.replaceChildren(head);
     nodes.scoresBody.replaceChildren(...result.rows.map((resultRow) => {
@@ -1384,8 +1401,8 @@
     }));
     const warnings = [...precision.values()].filter((item) => item.exceedsMaximum).length;
     nodes.precisionNote.textContent = warnings
-      ? "Hay empates visuales con 4 decimales; se conserva la ordenación del cálculo completo."
-      : "Precisión adaptativa: entre 2 y 4 decimales.";
+      ? runtimeCopy.adaptive_precision_tie
+      : runtimeCopy.adaptive_precision;
   };
 
   const renderConclusions = (result) => {
@@ -1396,36 +1413,36 @@
     const impact = result.impacts.find((item) => item.method_id === method.method_id);
     const bmaxDifference = result.scenario.bmax_difference_pp;
     const bmaxConclusion = Math.abs(bmaxDifference) < 0.01
-      ? "La Bmax observada coincide con la hipótesis usada para estudiar la curva esperada."
-      : `La Bmax real fue del ${percent.format(result.scenario.maximum_discount_pct)} %, frente al ${summaryNumber.format(result.scenario.expected_maximum_discount_pct)} % supuesto. Esta diferencia ${method.depends_on_other_offers ? "modifica el comportamiento efectivo de la fórmula relativa o mixta." : "no altera esta fórmula absoluta."}`;
+      ? runtimeCopy.bmax_matches
+      : message(method.depends_on_other_offers ? runtimeCopy.bmax_diff_relative : runtimeCopy.bmax_diff_absolute, { actual: percent.format(result.scenario.maximum_discount_pct), expected: summaryNumber.format(result.scenario.expected_maximum_discount_pct) });
     const conclusions = profile === "empresa"
       ? [
           bmaxConclusion,
-          `${ranking[0]?.name || "La primera oferta"} encabeza la simulación con ${method.name}.`,
+          message(runtimeCopy.company_leader, { name: ranking[0]?.name || runtimeCopy.first_offer, formula: method.name }),
           spread < result.scenario.pmax * 0.1
-            ? "Las puntuaciones están muy agrupadas; pequeñas diferencias técnicas pueden decidir la clasificación total."
-            : `La fórmula separa en ${summaryNumber.format(spread)} puntos a la primera y la última oferta del escenario.`,
+            ? runtimeCopy.company_close
+            : message(runtimeCopy.company_spread, { spread: summaryNumber.format(spread) }),
           winners.size > 1
-            ? "La posición competitiva cambia según la fórmula elegida por el órgano de contratación."
-            : "Las fórmulas activas mantienen el mismo ganador total en este escenario.",
-          "Una baja sostenible debe contrastarse con costes y capacidad de ejecución, no sólo con la posición matemática.",
+            ? runtimeCopy.company_formula_changes
+            : runtimeCopy.company_same_winner,
+          runtimeCopy.company_sustainable,
         ]
       : [
           bmaxConclusion,
           spread < result.scenario.pmax * 0.1
-            ? "La fórmula produce poca separación entre las ofertas económicas de este caso."
-            : `La fórmula seleccionada separa en ${summaryNumber.format(spread)} puntos a los extremos de la clasificación.`,
+            ? runtimeCopy.authority_close
+            : message(runtimeCopy.authority_spread, { spread: summaryNumber.format(spread) }),
           winners.size > 1
-            ? `Las fórmulas activas producen ${winners.size} ganadores totales distintos.`
-            : "Las fórmulas activas mantienen el mismo ganador total.",
+            ? message(runtimeCopy.authority_winners, { count: winners.size })
+            : runtimeCopy.authority_same_winner,
           impact?.unchanged_price_changed_count
-            ? "La simulación altera puntos de ofertas cuyo importe no ha cambiado, porque la fórmula depende del conjunto."
-            : "En la simulación actual no cambian puntos de ofertas con el mismo importe.",
+            ? runtimeCopy.authority_impact
+            : runtimeCopy.authority_no_impact,
           ranking[0]?.name === (simulationActive
             ? [...offers].filter((offer) => !offer.excluded).sort((a, b) => b.non_price_points - a.non_price_points || a.price - b.price)[0]?.name
             : currentCase.best_technical_offer)
-            ? `La mejor oferta técnica conserva la primera posición con ${simulationActive ? "esta simulación" : "la configuración observada"}.`
-            : `La mejor oferta técnica no queda primera con ${simulationActive ? "esta simulación" : "la configuración observada"}.`,
+            ? message(runtimeCopy.technical_first, { context: simulationActive ? runtimeCopy.simulation_context : runtimeCopy.observed_context })
+            : message(runtimeCopy.technical_not_first, { context: simulationActive ? runtimeCopy.simulation_context : runtimeCopy.observed_context }),
         ];
     nodes.conclusionList.replaceChildren(...conclusions.map((text) => element("li", "", text)));
   };
@@ -1474,10 +1491,10 @@
       item.append(element("dt", "", label), element("dd", "", value));
       meta.append(item);
     };
-    addMeta(reportCopy.report_profile, profile === "empresa" ? "Empresa" : "Administración");
+    addMeta(reportCopy.report_profile, profile === "empresa" ? runtimeCopy.report_company : runtimeCopy.report_administration);
     addMeta(reportCopy.report_context, contextLabel);
     addMeta(reportCopy.report_generated, generatedAt);
-    addMeta("Página", `${pageNumber}/${pageCount}`);
+    addMeta(runtimeCopy.page, `${pageNumber}/${pageCount}`);
     header.append(identity, meta);
     return header;
   };
@@ -1775,7 +1792,7 @@
   });
   $("#add-offer").addEventListener("click", () => {
     if (offers.length >= catalog.max_offers) {
-      setStatus(`El máximo es de ${catalog.max_offers} ofertas.`, "error");
+      setStatus(message(runtimeCopy.maximum_offers, { count: catalog.max_offers }), "error");
       return;
     }
     offerSequence += 1;
@@ -1791,7 +1808,7 @@
   });
   $("#add-extreme").addEventListener("click", () => {
     if (offers.length >= catalog.max_offers) {
-      setStatus(`El máximo es de ${catalog.max_offers} ofertas.`, "error");
+      setStatus(message(runtimeCopy.maximum_offers, { count: catalog.max_offers }), "error");
       return;
     }
     offerSequence += 1;
