@@ -4,9 +4,23 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
-  <meta name="description" content="{{ copy.analysis.meta_description }}">
-  <title>{{ copy.analysis.page_title }} · {{ catalog.title }}</title>
-  <link rel="alternate" hreflang="{{ alternate_locale }}" href="{{ alternate_url }}">
+  <meta name="description" content="{{ seo_description }}">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <title>{{ seo_title }}</title>
+  <link rel="canonical" href="{{ canonical_url }}">
+  <link rel="alternate" hreflang="{{ locale }}" href="{{ canonical_url }}">
+  <link rel="alternate" hreflang="{{ alternate_locale }}" href="{{ alternate_canonical_url }}">
+  <link rel="alternate" hreflang="x-default" href="{{ x_default_url }}">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="{{ seo_site_name }}">
+  <meta property="og:title" content="{{ seo_title }}">
+  <meta property="og:description" content="{{ seo_description }}">
+  <meta property="og:url" content="{{ canonical_url }}">
+  <meta property="og:locale" content="{{ og_locale }}">
+  <meta property="og:locale:alternate" content="{{ og_alternate_locale }}">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="{{ seo_title }}">
+  <meta name="twitter:description" content="{{ seo_description }}">
   <script>{{ asset_recovery_script | safe }}</script>
   <link rel="stylesheet" href="{{ stylesheet_url }}" data-formula-stylesheet>
   <script id="formula-catalog" type="application/json">{{ catalog | tojson }}</script>
@@ -180,8 +194,8 @@
     {% if catalog.feedback_url %}<section class="fp-commercial-cta">
       <div><p class="fp-kicker">{{ copy.analysis.commercial_kicker }}</p><h2 id="commercial-cta-title">{{ copy.analysis.profiles.administracion.commercial_title }}</h2><p id="commercial-cta-copy"></p></div>
       <div class="fp-cta-actions">
-        <a class="fp-button fp-button-primary" href="{{ catalog.feedback_urls.formula }}" rel="noopener noreferrer">{{ copy.analysis.commercial_analysis_cta }}</a>
-        <a class="fp-button fp-button-outline" href="{{ catalog.feedback_urls.caso }}" rel="noopener noreferrer">{{ copy.analysis.commercial_case_cta }}</a>
+        <a class="fp-button fp-button-primary" href="{{ catalog.feedback_urls.formula }}" rel="me noopener noreferrer" target="_blank">{{ copy.analysis.commercial_analysis_cta }}</a>
+        <a class="fp-button fp-button-outline" href="{{ catalog.feedback_urls.caso }}" rel="me noopener noreferrer" target="_blank">{{ copy.analysis.commercial_case_cta }}</a>
       </div>
     </section>{% endif %}
   </main>

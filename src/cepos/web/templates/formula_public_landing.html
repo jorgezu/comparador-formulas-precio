@@ -4,12 +4,29 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
-  <meta name="description" content="{{ copy.landing.meta_description }}">
-  <title>{{ catalog.title }}</title>
-  <link rel="alternate" hreflang="{{ alternate_locale }}" href="{{ alternate_url }}">
+  <meta name="description" content="{{ seo_description }}">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <title>{{ seo_title }}</title>
+  <link rel="canonical" href="{{ canonical_url }}">
+  <link rel="alternate" hreflang="{{ locale }}" href="{{ canonical_url }}">
+  <link rel="alternate" hreflang="{{ alternate_locale }}" href="{{ alternate_canonical_url }}">
+  <link rel="alternate" hreflang="x-default" href="{{ x_default_url }}">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="{{ seo_site_name }}">
+  <meta property="og:title" content="{{ seo_title }}">
+  <meta property="og:description" content="{{ seo_description }}">
+  <meta property="og:url" content="{{ canonical_url }}">
+  <meta property="og:locale" content="{{ og_locale }}">
+  <meta property="og:locale:alternate" content="{{ og_alternate_locale }}">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="{{ seo_title }}">
+  <meta name="twitter:description" content="{{ seo_description }}">
   <link rel="stylesheet" href="{{ stylesheet_url }}">
 </head>
-<body class="fp-body fp-landing-page">
+<body class="fp-body fp-landing-page" itemscope itemtype="https://schema.org/WebSite">
+  <meta itemprop="url" content="https://tender-lab.com/">
+  <meta itemprop="name" content="TenderLab">
+  <meta itemprop="alternateName" content="{{ seo_site_name }}">
   <header class="fp-topbar">
     <a class="fp-product" href="{{ home_url }}" aria-label="{{ copy.landing.home_aria }}">
       <span class="fp-product-mark" aria-hidden="true">f(x)</span>
@@ -22,7 +39,11 @@
     </nav>
   </header>
 
-  <main class="fp-shell">
+  <main class="fp-shell" itemscope itemtype="https://schema.org/WebApplication">
+    <meta itemprop="name" content="TenderLab">
+    <meta itemprop="applicationCategory" content="BusinessApplication">
+    <meta itemprop="operatingSystem" content="Web">
+    <meta itemprop="description" content="{{ seo_description }}">
     <section class="fp-heading fp-landing" aria-labelledby="page-title">
       <div class="fp-landing-copy">
         <p class="fp-kicker">{{ copy.landing.kicker }}</p>
@@ -68,7 +89,7 @@
         <a class="fp-button fp-button-outline" href="{{ lab_url }}">{{ copy.landing.explainer_lab_cta }}</a>
       </div>
     </section>
-    {% if catalog.feedback_url %}<section class="fp-feedback-band fp-feedback-band-quiet"><div><p class="fp-kicker">{{ copy.landing.feedback_kicker }}</p><p>{{ copy.landing.feedback_body }}</p></div><a class="fp-text-link" href="{{ catalog.feedback_urls.feedback }}" rel="noopener noreferrer">{{ copy.landing.feedback_cta }}</a></section>{% endif %}
+    {% if catalog.feedback_url %}<section class="fp-feedback-band fp-feedback-band-quiet"><div><p class="fp-kicker">{{ copy.landing.feedback_kicker }}</p><p>{{ copy.landing.feedback_body }}</p></div><a class="fp-text-link" href="{{ catalog.feedback_urls.feedback }}" rel="me noopener noreferrer" target="_blank">{{ copy.landing.feedback_cta }}</a></section>{% endif %}
     <section class="fp-landing-why" aria-labelledby="landing-why-title">
       <h2 id="landing-why-title">{{ copy.landing.why_title }}</h2>
       <p>{{ copy.landing.why_text }}</p>

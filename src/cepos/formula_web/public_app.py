@@ -8,31 +8,17 @@ import json
 import os
 from pathlib import Path
 from typing import Any
-from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from starlette.applications import Starlette
-from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException
 from starlette.middleware import Middleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from starlette.requests import Request
-from starlette.responses import FileResponse, JSONResponse, PlainTextResponse, Response
+from starlette.responses import FileResponse, JSONResponse, PlainTextResponse, RedirectResponse, Response
 from starlette.routing import Route
 from starlette.templating import Jinja2Templates
+from starlette.concurrency import run_in_threadpool
 
-from .contact import (
-    CONTACT_FORM_MAX_BYTES,
-    PROFILE_LABELS,
-    PROFILE_OPTIONS,
-    REASON_LABELS,
-    REASON_OPTIONS,
-    ContactDeliveryError,
-    ContactDeliveryNotConfigured,
-    ContactRateLimiter,
-    ContactValidationError,
-    ResendContactSender,
-    validate_submission,
-)
 from .public_copy import PUBLIC_COPY
 from .public_copy_en import PUBLIC_COPY_EN
 from .public_catalog_i18n import localise_catalog
@@ -44,7 +30,8 @@ WEB_DIR = Path(__file__).resolve().parents[1] / "web"
 TEMPLATES = Jinja2Templates(directory=str(WEB_DIR / "templates"))
 STATIC_DIR = WEB_DIR / "static"
 MAX_REQUEST_BYTES = 64 * 1024
-ASSET_VERSION = "20261014-legal-v1"
+PUBLIC_SITE_URL = "https://tender-lab.com"
+ASSET_VERSION = "20261014-seo-v1"
 ASSET_RECOVERY_SCRIPT = """(() => {
   "use strict";
   const retryKey = "tenderlab-analysis-assets-retry";
@@ -156,7 +143,6 @@ def _translated_path(path: str, locale: str) -> str:
         "/formulas": "/en/formulas",
         "/formulas/analizador": "/en/formulas/analyzer",
         "/formulas/laboratorio": "/en/formulas/laboratory",
-        "/contacto": "/en/contact",
         "/informacion-legal": "/en/legal",
     }
     if locale == "es":
@@ -165,33 +151,24 @@ def _translated_path(path: str, locale: str) -> str:
     return reverse.get(path, "/formulas")
 
 
-def _feedback_url(base_url: str, reason: str, origin: str) -> str:
-    if not base_url:
-        return ""
-    parts = urlsplit(base_url)
-    query = [
-        (key, value)
-        for key, value in parse_qsl(parts.query, keep_blank_values=True)
-        if key != "motivo"
-    ]
-    query.append(("motivo", reason))
-    if not any(key == "origen" for key, _ in query):
-        query.append(("origen", origin))
-    return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(query), parts.fragment))
+def _page_kind(path: str) -> str:
+    if path.endswith(("/analizador", "/analyzer")):
+        return "analysis"
+    if path.endswith(("/laboratorio", "/laboratory")):
+        return "lab"
+    if path.endswith(("/informacion-legal", "/legal")):
+        return "legal"
+    return "landing"
 
 
 def _page_context(request: Request) -> dict[str, Any]:
     locale = _locale(request)
     copy = _copy(request)
     catalog = localise_catalog(_service(request).public_catalog(), locale)
-    feedback_url = str(catalog.get("feedback_url", ""))
-    if locale == "en" and feedback_url == "/contacto":
-        feedback_url = "/en/contact"
-    origin = request.url.path
-    if request.url.query:
-        origin = f"{origin}?{request.url.query}"
+    feedback_url = str(catalog.get("author", {}).get("linkedin_url", ""))
+    catalog["feedback_url"] = feedback_url
     catalog["feedback_urls"] = {
-        reason: _feedback_url(feedback_url, reason, origin)
+        reason: feedback_url
         for reason in ("feedback", "formula", "caso", "privacidad")
     }
     for internal_key in ("product_version", "engine_version", "canonical_catalog_version"):
@@ -227,6 +204,11 @@ def _page_context(request: Request) -> dict[str, Any]:
         catalog["analyzer_url"] = "/formulas/analizador"
         catalog["lab_url"] = "/formulas/laboratorio"
         catalog["legal_url"] = "/informacion-legal"
+    requested_path = request.url.path
+    canonical_path = catalog["home_url"] if requested_path in {"/", "/en"} else requested_path
+    alternate_path = _translated_path(canonical_path, locale)
+    spanish_path = canonical_path if locale == "es" else alternate_path
+    page_copy = copy[_page_kind(canonical_path)]
     retry_token = request.query_params.get("_assets", "")
     retry_suffix = f"&retry={retry_token}" if retry_token.isdigit() else ""
     return {
@@ -242,6 +224,14 @@ def _page_context(request: Request) -> dict[str, Any]:
         "alternate_url": _translated_path(request.url.path, locale) + (
             f"?{request.url.query}" if request.url.query else ""
         ),
+        "canonical_url": f"{PUBLIC_SITE_URL}{canonical_path}",
+        "alternate_canonical_url": f"{PUBLIC_SITE_URL}{alternate_path}",
+        "x_default_url": f"{PUBLIC_SITE_URL}{spanish_path}",
+        "seo_title": page_copy.get("seo_title") or page_copy.get("page_title") or str(catalog["title"]),
+        "seo_description": page_copy["meta_description"],
+        "seo_site_name": copy["common"]["seo_site_name"],
+        "og_locale": "en_GB" if locale == "en" else "es_ES",
+        "og_alternate_locale": "es_ES" if locale == "en" else "en_GB",
         "stylesheet_url": f"/static/formula-public.css?v={ASSET_VERSION}{retry_suffix}",
         "format_script_url": f"/static/formula-format.js?v={ASSET_VERSION}{retry_suffix}",
     }
@@ -297,189 +287,46 @@ def legal_page(request: Request) -> Response:
     )
 
 
-def _contact_sender_configured(sender: Any) -> bool:
-    configured = getattr(sender, "configured", None)
-    return bool(configured()) if callable(configured) else True
+def contact_redirect(request: Request) -> Response:
+    linkedin_url = str(_service(request).public_catalog()["author"]["linkedin_url"])
+    return RedirectResponse(linkedin_url, status_code=302)
 
 
-def _contact_values(request: Request) -> dict[str, str]:
-    reason = request.query_params.get("motivo", "feedback")
-    if reason not in REASON_LABELS:
-        reason = "feedback"
-    profile = request.query_params.get("perfil", "administracion")
-    if profile not in PROFILE_LABELS:
-        profile = "administracion"
-    origin = request.query_params.get("origen", "").strip()
-    if not origin:
-        origin = request.headers.get("referer", "").strip() or "/contacto"
-    return {
-        "email": "",
-        "profile": profile,
-        "reason": reason,
-        "message": "",
-        "reference_url": "",
-        "origin": origin[:500],
-    }
+def root_redirect(request: Request) -> Response:
+    return RedirectResponse("/en/formulas" if _locale(request) == "en" else "/formulas", status_code=308)
 
 
-def _localise_contact_errors(
-    errors: dict[str, str], copy: dict[str, Any]
-) -> dict[str, str]:
-    if copy is PUBLIC_COPY:
-        return errors
-    spanish = PUBLIC_COPY["contact"]["validation"]
-    translated = copy["contact"]["validation"]
-    by_message = {message: translated[key] for key, message in spanish.items()}
-    return {field: by_message.get(message, message) for field, message in errors.items()}
-
-
-def _contact_response(
-    request: Request,
-    *,
-    values: dict[str, str],
-    errors: dict[str, str] | None = None,
-    form_error: str = "",
-    success: bool = False,
-    status_code: int = 200,
-) -> Response:
-    context = _page_context(request)
-    copy = _copy(request)
-    context.update(
-        {
-            "values": values,
-            "errors": errors or {},
-            "form_error": form_error,
-            "success": success,
-            "profile_options": copy["contact"]["profiles"],
-            "reason_options": copy["contact"]["reasons"],
-            "delivery_configured": _contact_sender_configured(
-                request.app.state.contact_sender
-            ),
-            "release_label": copy["common"]["release_label"],
-            "contact_action": "/en/contact" if _locale(request) == "en" else "/contacto",
-        }
-    )
-    return TEMPLATES.TemplateResponse(
-        request=request,
-        name="formula_contact.html",
-        context=context,
-        status_code=status_code,
-        headers={"Cache-Control": "no-store"},
+def robots(_: Request) -> Response:
+    return PlainTextResponse(
+        "User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /health\n"
+        f"Sitemap: {PUBLIC_SITE_URL}/sitemap.xml\n"
     )
 
 
-def contact_page(request: Request) -> Response:
-    return _contact_response(request, values=_contact_values(request))
-
-
-async def _read_contact_fields(request: Request) -> dict[str, str]:
-    copy = _copy(request)
-    content_type = request.headers.get("content-type", "").split(";", 1)[0].strip().lower()
-    if content_type != "application/x-www-form-urlencoded":
-        raise ContactValidationError(
-            {"form": copy["contact"]["validation"]["invalid_format"]}
+def sitemap(_: Request) -> Response:
+    pairs = (
+        ("/formulas", "/en/formulas"),
+        ("/formulas/analizador", "/en/formulas/analyzer"),
+        ("/formulas/laboratorio", "/en/formulas/laboratory"),
+        ("/informacion-legal", "/en/legal"),
+    )
+    entries = []
+    for spanish, english in pairs:
+        alternates = (
+            f'<xhtml:link rel="alternate" hreflang="es" href="{PUBLIC_SITE_URL}{spanish}"/>'
+            f'<xhtml:link rel="alternate" hreflang="en" href="{PUBLIC_SITE_URL}{english}"/>'
+            f'<xhtml:link rel="alternate" hreflang="x-default" href="{PUBLIC_SITE_URL}{spanish}"/>'
         )
-    content_length = request.headers.get("content-length")
-    if content_length:
-        try:
-            parsed_length = int(content_length)
-        except ValueError as exc:
-            raise ContactValidationError(
-                {"form": copy["contact"]["validation"]["invalid_size"]}
-            ) from exc
-        if parsed_length > CONTACT_FORM_MAX_BYTES:
-            raise ContactValidationError(
-                {"form": copy["contact"]["validation"]["too_large"]}
-            )
-
-    body = bytearray()
-    async for chunk in request.stream():
-        body.extend(chunk)
-        if len(body) > CONTACT_FORM_MAX_BYTES:
-            raise ContactValidationError(
-                {"form": copy["contact"]["validation"]["too_large"]}
-            )
-    try:
-        pairs = parse_qsl(
-            body.decode("utf-8"), keep_blank_values=True, max_num_fields=20
-        )
-    except (UnicodeDecodeError, ValueError) as exc:
-        raise ContactValidationError(
-            {"form": copy["contact"]["validation"]["invalid_format"]}
-        ) from exc
-    allowed = {
-        "email",
-        "profile",
-        "reason",
-        "message",
-        "reference_url",
-        "origin",
-        "website",
-    }
-    if any(key not in allowed for key, _ in pairs):
-        raise ContactValidationError(
-            {"form": copy["contact"]["validation"]["invalid_fields"]}
-        )
-    return dict(pairs)
-
-
-async def contact_submit(request: Request) -> Response:
-    copy = _copy(request)
-    fallback = _contact_values(request)
-    try:
-        fields = await _read_contact_fields(request)
-    except ContactValidationError as exc:
-        return _contact_response(
-            request,
-            values=fallback,
-            errors=exc.errors,
-            form_error=exc.errors.get(
-                "form", copy["contact"]["validation"]["review_fields"]
-            ),
-            status_code=422,
-        )
-
-    values = {key: fields.get(key, fallback[key]) for key in fallback}
-    if fields.get("website", "").strip():
-        return _contact_response(request, values=values, success=True)
-
-    try:
-        submission = validate_submission(fields)
-    except ContactValidationError as exc:
-        errors = _localise_contact_errors(exc.errors, copy)
-        return _contact_response(
-            request,
-            values=values,
-            errors=errors,
-            form_error=copy["contact"]["validation"]["review_fields"],
-            status_code=422,
-        )
-
-    client_key = request.client.host if request.client else "unknown"
-    if not request.app.state.contact_rate_limiter.allow(client_key):
-        return _contact_response(
-            request,
-            values=values,
-            form_error=copy["contact"]["delivery"]["rate_limited"],
-            status_code=429,
-        )
-    try:
-        await run_in_threadpool(request.app.state.contact_sender.send, submission)
-    except ContactDeliveryNotConfigured:
-        return _contact_response(
-            request,
-            values=values,
-            form_error=copy["contact"]["delivery"]["not_configured"],
-            status_code=503,
-        )
-    except ContactDeliveryError:
-        return _contact_response(
-            request,
-            values=values,
-            form_error=copy["contact"]["delivery"]["failed"],
-            status_code=502,
-        )
-    return _contact_response(request, values=values, success=True)
+        entries.append(f"<url><loc>{PUBLIC_SITE_URL}{spanish}</loc>{alternates}</url>")
+        entries.append(f"<url><loc>{PUBLIC_SITE_URL}{english}</loc>{alternates}</url>")
+    body = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" '
+        'xmlns:xhtml="http://www.w3.org/1999/xhtml">'
+        + "".join(entries)
+        + "</urlset>"
+    )
+    return Response(body, media_type="application/xml")
 
 
 async def compare(request: Request) -> Response:
@@ -613,25 +460,21 @@ def _allowed_hosts() -> list[str]:
 def create_public_app(
     *,
     service: FormulaPriceComparatorService | None = None,
-    contact_sender: Any | None = None,
-    contact_rate_limiter: ContactRateLimiter | None = None,
 ) -> Starlette:
     app = Starlette(
         debug=False,
         routes=[
-            Route("/", formula_page, methods=["GET"]),
+            Route("/", root_redirect, methods=["GET"]),
             Route("/formulas", formula_page, methods=["GET"]),
             Route("/formulas/analizador", formula_analysis_page, methods=["GET"]),
             Route("/formulas/laboratorio", formula_lab_page, methods=["GET"]),
-            Route("/contacto", contact_page, methods=["GET"]),
-            Route("/contacto", contact_submit, methods=["POST"]),
+            Route("/contacto", contact_redirect, methods=["GET"]),
             Route("/informacion-legal", legal_page, methods=["GET"]),
-            Route("/en", formula_page, methods=["GET"]),
+            Route("/en", root_redirect, methods=["GET"]),
             Route("/en/formulas", formula_page, methods=["GET"]),
             Route("/en/formulas/analyzer", formula_analysis_page, methods=["GET"]),
             Route("/en/formulas/laboratory", formula_lab_page, methods=["GET"]),
-            Route("/en/contact", contact_page, methods=["GET"]),
-            Route("/en/contact", contact_submit, methods=["POST"]),
+            Route("/en/contact", contact_redirect, methods=["GET"]),
             Route("/en/legal", legal_page, methods=["GET"]),
             Route("/api/formula-price-comparator/compare", compare, methods=["POST"]),
             Route("/static/formula-public.css", stylesheet, methods=["GET"]),
@@ -640,6 +483,8 @@ def create_public_app(
             Route("/static/formula-lab.js", lab_script, methods=["GET"]),
             Route("/static/formula-venn-header.png", venn_image, methods=["GET"]),
             Route("/static/formula-equations-strip.png", equations_image, methods=["GET"]),
+            Route("/robots.txt", robots, methods=["GET"]),
+            Route("/sitemap.xml", sitemap, methods=["GET"]),
             Route("/health", health, methods=["GET"]),
         ],
         middleware=[
@@ -649,14 +494,6 @@ def create_public_app(
         exception_handlers={HTTPException: http_error, Exception: unexpected_error},
     )
     app.state.formula_service = service or FormulaPriceComparatorService.open(ROOT)
-    app.state.contact_sender = (
-        contact_sender if contact_sender is not None else ResendContactSender()
-    )
-    app.state.contact_rate_limiter = (
-        contact_rate_limiter
-        if contact_rate_limiter is not None
-        else ContactRateLimiter()
-    )
     return app
 
 
