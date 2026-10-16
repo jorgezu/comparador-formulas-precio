@@ -307,10 +307,9 @@
       const priceInput = element("input");
       priceInput.type = "number";
       priceInput.inputMode = "decimal";
-      priceInput.min = "0.01";
       priceInput.max = String(Number(nodes.tenderPrice.value));
-      priceInput.step = "0.01";
-      priceInput.value = editableNumber(offer.price);
+      priceInput.step = "1000";
+      priceInput.setAttribute("value", editableNumber(offer.price));
       priceInput.disabled = offer.excluded;
       priceInput.dataset.offerPrice = offer.offer_id;
       priceInput.setAttribute("aria-label", `${simulationCopy.simulation_offer_price} de ${offer.name}`);
@@ -354,17 +353,18 @@
       const technicalInput = element("input");
       technicalInput.type = "number";
       technicalInput.inputMode = "decimal";
-      technicalInput.min = "0";
       technicalInput.max = String(currentCase.non_price_max);
-      technicalInput.step = "0.01";
-      technicalInput.value = editableNumber(offer.non_price_points);
+      technicalInput.step = "0.1";
+      technicalInput.setAttribute("value", editableNumber(offer.non_price_points));
       technicalInput.disabled = offer.excluded;
       technicalInput.setAttribute("aria-label", `${simulationCopy.simulation_non_price_points} de ${offer.name}`);
       technicalInput.addEventListener("input", () => {
         const value = Number(technicalInput.value);
         const valid = technicalInput.value !== ""
           && technicalInput.validity.valid
-          && Number.isFinite(value);
+          && Number.isFinite(value)
+          && value >= 0
+          && value <= currentCase.non_price_max;
         technicalInput.setAttribute("aria-invalid", String(!valid));
         if (!valid) {
           setStatus(simulationCopy.simulation_limit_error.replace(
@@ -443,6 +443,7 @@
     syncRankingButtons();
     currentCase = deepCopy(catalog.cases.find((item) => item.case_id === caseId) || catalog.cases[0]);
     nodes.caseSelector.value = currentCase.case_id;
+    nodes.tenderPrice.setAttribute("value", String(currentCase.tender_price));
     nodes.tenderPrice.value = String(currentCase.tender_price);
     nodes.pmax.value = String(currentCase.pmax);
     expectedBmaxPct = initialBmaxForCase(currentCase);
@@ -629,7 +630,7 @@
         );
         const input = element("input");
         input.type = "number";
-        input.min = String(field.min);
+        input.min = String(field.input_min ?? field.min);
         input.max = String(field.max);
         input.step = String(field.step);
         input.value = String(Number(state.parameters[field.name]) * Number(field.display_factor || 1));

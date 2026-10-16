@@ -293,14 +293,14 @@
       const controls = element("div");
       const range = element("input");
       range.type = "range";
-      range.min = String(field.min);
+      range.min = String(field.input_min ?? field.min);
       range.max = String(field.max);
       range.step = String(field.step);
       range.value = String(Number(customParameters[field.name]) * Number(field.display_factor || 1));
       range.setAttribute("aria-label", field.label);
       const number = element("input");
       number.type = "number";
-      number.min = String(field.min);
+      number.min = String(field.input_min ?? field.min);
       number.max = String(field.max);
       number.step = String(field.step);
       number.value = range.value;

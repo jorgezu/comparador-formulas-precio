@@ -64,7 +64,7 @@
     },
     {
       "path": "src/cepos/formula_web/public_app.py",
-      "sha256": "56aa9fcaa58b96619011d9a2d5728740a748d7c977b0d7f02c622b1f1a713a67"
+      "sha256": "68ba4532565a1e2d71be269cd1ded199dcc35697edd99f38a11ba86d6a48e9ac"
     },
     {
       "path": "src/cepos/formula_web/public_cases.py",
@@ -92,7 +92,7 @@
     },
     {
       "path": "src/cepos/formula_web/service.py",
-      "sha256": "295861d7e61a44d888d6cbc5d31fa893f244469cf9be114cb96973cb5ba94e3c"
+      "sha256": "7a4e684cdb042c3efa160005b7ce8f6840fc31b48bcf57fffc7cb4d30c8e9ffa"
     },
     {
       "path": "src/cepos/web/static/formula-comparator.css",
@@ -100,7 +100,7 @@
     },
     {
       "path": "src/cepos/web/static/formula-comparator.js",
-      "sha256": "2405385d8d8b2a06bc2033fc3304cd8db0337ea7c9531a5822886ab7db7abe62"
+      "sha256": "e7f4815c9e291a065adab7780503eb2b2dc3363ae5410e7c1531abb169edd32e"
     },
     {
       "path": "src/cepos/web/static/formula-equations-strip.png",
@@ -112,11 +112,11 @@
     },
     {
       "path": "src/cepos/web/static/formula-lab.js",
-      "sha256": "4244e5e3e42e59c7e6468cdd14f9e25b3ebc792b5bd82436aa52574e77e8e6f4"
+      "sha256": "ea21342c424a75ba39772b9c95e684deed7d02c0b68b236c961cfdeddfbad44f"
     },
     {
       "path": "src/cepos/web/static/formula-public-analysis.js",
-      "sha256": "1204635f1a2ce2eab22769adde4b8c2b531ece11c5c37d2c02d825f0238dfead"
+      "sha256": "af025bfe90ad0b5c6358b6b83bbd69b82dee8e4dc0fba18657a6fd4ed5582895"
     },
     {
       "path": "src/cepos/web/static/formula-public.css",
@@ -128,15 +128,15 @@
     },
     {
       "path": "src/cepos/web/templates/formula_analysis.html",
-      "sha256": "29a6caec73faeead4dc6b48cf2c87ec2c2a67c3d6cb6326f2adb190cf50e9b6c"
+      "sha256": "1746cc2f337498c1e7512184a06e9fc8adb07d85373b1a321673590d3177d498"
     },
     {
       "path": "src/cepos/web/templates/formula_comparator.html",
-      "sha256": "a6af0aa372b17ef2f4135601597306b28679279a07c34e6aad9fd0b739c54020"
+      "sha256": "7067709e1b4e951aab4ca09763b5619e9907f75399609b7cabc843909968d345"
     },
     {
       "path": "src/cepos/web/templates/formula_lab.html",
-      "sha256": "3b5aed0b9085112d519f7a1b3ac87cbca30f88c6be22429a534f77c8c08d1921"
+      "sha256": "1df282b3c441e16a2f7e6e17b431403600eb03b21257a9bad6fb578e6b0df4ed"
     },
     {
       "path": "src/cepos/web/templates/formula_legal.html",

@@ -145,31 +145,46 @@ PUBLIC_METHODS: dict[str, dict[str, Any]] = {
 
 PARAMETER_FIELDS: dict[str, tuple[dict[str, Any], ...]] = {
     "NORMALIZED_PRICE_GAP_POWER": (
-        {"name": "n", "label": "Exponente n", "min": 0.01, "max": 100.0, "step": 0.01},
+        {"name": "n", "label": "Exponente n", "min": 0.01, "input_min": 0.1, "max": 100.0, "step": 0.1},
     ),
     "DISCOUNT_MAX_POWER": (
-        {"name": "k", "label": "Índice de la raíz k", "min": 0.01, "max": 100.0, "step": 0.01},
+        {"name": "k", "label": "Índice de la raíz k", "min": 0.01, "input_min": 0.1, "max": 100.0, "step": 0.1},
     ),
     "EXPONENTIAL_SATURATING_DISCOUNT": (
-        {"name": "k", "label": "Coeficiente k", "min": 0.001, "max": 10.0, "step": 0.001},
+        {"name": "k", "label": "Coeficiente k", "min": 0.001, "input_min": 0.05, "max": 10.0, "step": 0.05},
     ),
     "DISCOUNT_THRESHOLD_TWO_SEGMENTS": (
-        {"name": "n", "label": "Pendiente inicial n", "min": 0.01, "max": 100.0, "step": 0.01},
+        {"name": "n", "label": "Pendiente inicial n", "min": 0.01, "input_min": 0.1, "max": 100.0, "step": 0.1},
         {
             "name": "B",
             "label": "Umbral de baja B",
             "suffix": "%",
             "min": 0.01,
+            "input_min": 0.1,
             "max": 99.99,
-            "step": 0.01,
+            "step": 0.1,
         },
-        {"name": "k", "label": "Puntos del tramo final k", "min": 0.01, "max": 100.0, "step": 0.01},
+        {"name": "k", "label": "Puntos del tramo final k", "min": 0.01, "input_min": 1.0, "max": 100.0, "step": 1.0},
     ),
     "MEDIAN_NORMALIZED_EXPONENTIAL": (
-        {"name": "k", "label": "Coeficiente k", "min": 0.001, "max": 5.0, "step": 0.001},
+        {
+            "name": "k",
+            "label": "Coeficiente k",
+            "min": 0.001,
+            "input_min": 0.018,
+            "max": 5.0,
+            "step": 0.05,
+        },
     ),
     "MEDIAN_QUADRATIC_RATIONAL": (
-        {"name": "k", "label": "Coeficiente k", "min": 0.001, "max": 5.0, "step": 0.001},
+        {
+            "name": "k",
+            "label": "Coeficiente k",
+            "min": 0.001,
+            "input_min": 0.033,
+            "max": 5.0,
+            "step": 0.05,
+        },
     ),
 }
 

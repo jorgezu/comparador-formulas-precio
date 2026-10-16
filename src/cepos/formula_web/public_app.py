@@ -31,7 +31,7 @@ TEMPLATES = Jinja2Templates(directory=str(WEB_DIR / "templates"))
 STATIC_DIR = WEB_DIR / "static"
 MAX_REQUEST_BYTES = 64 * 1024
 PUBLIC_SITE_URL = "https://tender-lab.com"
-ASSET_VERSION = "20261014-seo-v1"
+ASSET_VERSION = "20261016-input-steps-v1"
 ASSET_RECOVERY_SCRIPT = """(() => {
   "use strict";
   const retryKey = "tenderlab-analysis-assets-retry";

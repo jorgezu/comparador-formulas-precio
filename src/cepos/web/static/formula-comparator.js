@@ -99,9 +99,8 @@
       const priceInput = element("input", "fp-offer-price");
       priceInput.type = "number";
       priceInput.inputMode = "decimal";
-      priceInput.min = "0.01";
       priceInput.step = "1000";
-      priceInput.value = String(offer.price);
+      priceInput.setAttribute("value", String(offer.price));
       priceInput.setAttribute("aria-label", `Precio de ${offer.name || `oferta ${index + 1}`}`);
       priceInput.addEventListener("input", () => {
         offer.price = Number(priceInput.value);
@@ -181,7 +180,7 @@
         const input = element("input");
         input.type = "number";
         input.inputMode = "decimal";
-        input.min = String(field.min);
+        input.min = String(field.input_min ?? field.min);
         input.max = String(field.max);
         input.step = String(field.step);
         input.dataset.parameter = field.name;
@@ -613,6 +612,7 @@
   };
 
   const loadDemo = () => {
+    tenderInput.setAttribute("value", String(catalog.demo.tender_price));
     tenderInput.value = String(catalog.demo.tender_price);
     pmaxInput.value = String(catalog.demo.pmax);
     offers = deepCopy(catalog.demo.offers);

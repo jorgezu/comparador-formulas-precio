@@ -72,7 +72,7 @@
         <div class="fp-simulation-settings">
           <label class="fp-simulation-pmax" for="simulation-pmax">
             <span>{{ copy.analysis.simulation_price_points }}</span>
-            <input id="simulation-pmax" type="number" inputmode="decimal" min="0.01" step="0.01">
+            <input id="simulation-pmax" type="number" inputmode="decimal" min="1" step="1">
             <small>{{ copy.analysis.simulation_price_points_help }}</small>
             <small id="simulation-pmax-reference"></small>
           </label>
@@ -100,7 +100,7 @@
           <summary>{{ copy.analysis.parameters }}</summary>
           <div class="fp-bmax-control">
             <label for="expected-bmax"><span>{{ copy.analysis.expected_bmax }}</span><strong id="expected-bmax-value">—</strong></label>
-            <div><input id="expected-bmax" type="range" min="5" max="95" step="5"><input id="expected-bmax-number" type="number" min="0.01" max="99.99" step="5" inputmode="decimal" aria-label="{{ copy.analysis.expected_bmax_value_aria }}"></div>
+            <div><input id="expected-bmax" type="range" min="5" max="95" step="1"><input id="expected-bmax-number" type="number" min="1" max="99" step="1" inputmode="decimal" aria-label="{{ copy.analysis.expected_bmax_value_aria }}"></div>
             <p>{{ copy.analysis.expected_bmax_help }}</p>
             <p id="bmax-inline-comparison"></p>
           </div>
@@ -110,8 +110,8 @@
         <details class="fp-control-section">
           <summary>{{ copy.analysis.offers }} <span id="offer-count"></span></summary>
           <div class="fp-field-grid fp-compact-fields">
-            <label class="fp-field"><span>{{ copy.analysis.tender_price }}</span><input id="tender-price" type="number" inputmode="decimal" min="0.01" step="1000"></label>
-            <label class="fp-field"><span>{{ copy.analysis.price_points }}</span><input id="pmax" type="number" inputmode="decimal" min="0.01" step="1"></label>
+            <label class="fp-field"><span>{{ copy.analysis.tender_price }}</span><input id="tender-price" type="number" inputmode="decimal" step="1000"></label>
+            <label class="fp-field"><span>{{ copy.analysis.price_points }}</span><input id="pmax" type="number" inputmode="decimal" min="1" step="1"></label>
           </div>
           <div class="fp-offer-list" id="offer-list"></div>
           <button class="fp-button fp-button-outline fp-full-button" id="add-offer" type="button">{{ copy.analysis.add_offer }}</button>
