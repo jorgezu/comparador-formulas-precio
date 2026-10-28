@@ -7,6 +7,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates \
+    && update-ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY requirements-public.txt /app/requirements-public.txt
 RUN pip install --no-cache-dir -r /app/requirements-public.txt \
     && groupadd --gid 10001 formula \

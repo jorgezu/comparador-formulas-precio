@@ -8,7 +8,7 @@
     },
     {
       "path": "Dockerfile.public",
-      "sha256": "3b588ca9f928e3ea8705b7bce5732250d244f4d162e5502f4d6e14801d9d8e6f"
+      "sha256": "dd6f19db8ebddf027e737b928d864547609d16e38fe2ea096e8c2ccb4466ad09"
     },
     {
       "path": "config/public_tools/formula_price_comparator_v1.json",
